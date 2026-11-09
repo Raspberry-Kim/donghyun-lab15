@@ -53,36 +53,26 @@ function drawCell(g,px,py,c,shape,lx,ly,nd){
     g.fillStyle=k.b; rr(g,x,y,w,h,rad); g.fill(); g.stroke();
     g.fillStyle='rgba(255,255,255,.5)'; rr(g,x+3,y+3,w-6,3,1.5); g.fill();
     return; }
-  if(shape===1){ /* 태블릿: 가운데 절취선(두 칸의 경계)을 사이에 두고 양쪽이 볼록볼록한 하나의 둥근 알. 경계에서는 살짝 잘록하지만 이어져 있다 */
-    if(!linked){ g.fillStyle=k.b; g.beginPath(); g.arc(cx,cy,7.5,0,Math.PI*2); g.fill(); g.stroke();
-      g.strokeStyle='rgba(58,48,66,.45)'; g.beginPath(); g.moveTo(cx-4.5,cy); g.lineTo(cx+4.5,cy); g.stroke();
-      g.fillStyle='rgba(255,255,255,.5)'; g.beginPath(); g.ellipse(cx-2.5,cy-3.5,2.6,1.4,-0.5,0,Math.PI*2); g.fill(); return; }
-    g.save(); g.translate(cx,cy); g.rotate(ang(lx,ly)); /* 짝이 오른쪽(+x)에 오도록 돌려 그린다 */
-    g.beginPath(); g.moveTo(10,-6.2);
-    g.bezierCurveTo(7.6,-6.2,6.6,-8.8,1.2,-8.8); g.bezierCurveTo(-5.4,-8.8,-9.4,-5.2,-9.4,0);
-    g.bezierCurveTo(-9.4,5.2,-5.4,8.8,1.2,8.8); g.bezierCurveTo(6.6,8.8,7.6,6.2,10,6.2);
-    g.fillStyle=k.b; g.fill(); g.stroke(); /* 열린 윤곽: 짝과 맞닿는 x=10 쪽은 선을 긋지 않는다 */
-    g.strokeStyle='rgba(58,48,66,.62)'; g.lineWidth=1.4; g.beginPath(); g.moveTo(10,-5); g.lineTo(10,5); g.stroke(); /* 절취선(짝의 반쪽과 합쳐 하나) */
-    g.restore();
-    g.fillStyle='rgba(255,255,255,.5)'; g.beginPath(); g.ellipse(cx-2+lx*1.5,cy-4.2+ly*1.5,3,1.5,-0.35,0,Math.PI*2); g.fill();
+  if(shape===1){ /* 태블릿: 납작한 모서리 둥근 네모, 가운데 홈 */
+    const x=px+m, y=py+m, w=s-2*m, h=s-2*m;
+    g.fillStyle=k.b; rr(g,x,y,w,h,4); g.fill(); g.stroke();
+    g.strokeStyle='rgba(58,48,66,.45)'; g.beginPath(); if(ly){ g.moveTo(x+3,y+h/2); g.lineTo(x+w-3,y+h/2); } else { g.moveTo(x+w/2,y+3); g.lineTo(x+w/2,y+h-3); } g.stroke();
+    g.fillStyle='rgba(255,255,255,.45)'; rr(g,x+2,y+2,w-4,3,1.5); g.fill();
+    if(linked){ g.fillStyle='rgba(58,48,66,.25)'; if(lx>0) g.fillRect(px+s-2,py+5,2,s-10); if(lx<0) g.fillRect(px,py+5,2,s-10); if(ly>0) g.fillRect(px+5,py+s-2,s-10,2); if(ly<0) g.fillRect(px+5,py,s-10,2); }
     return; }
-  /* 주사기: 바늘 칸은 통(눈금 창, 끝에 바늘), 다른 칸은 통의 뒤쪽과 밀대(손가락 날개·누르개). 바늘은 짝의 반대쪽을 가리킨다. 홑알은 작은 앰풀 */
-  if(!linked){ g.fillStyle=k.b; rr(g,px+4,py+6,12,13,[3,3,4,4]); g.fill(); g.stroke(); g.fillStyle=k.d; g.fillRect(px+7.5,py+2,5,4); g.fillStyle='rgba(255,255,255,.55)'; g.fillRect(px+6.5,py+8.5,2.5,8); return; }
+  /* 주사기(v0.04 그림): 통(눈금 창, 끝에 바늘)과 밀대. 바늘 칸은 nd로 받는다(v0.05 규칙: 바늘이 돌리는 방향을 따라 오른쪽→아래→왼쪽→위로 돌아 돌릴 때마다 바늘·밀대 색이 맞바뀐다). nd가 없으면(옛 저장) 짝이 왼쪽·위인 칸. 홑알은 작은 앰풀 */
+  if(!linked){ g.fillStyle=k.b; rr(g,px+5,py+7,10,11,[2,2,3,3]); g.fill(); g.stroke(); g.fillStyle=k.d; g.fillRect(px+8,py+3,4,4); g.fillStyle='rgba(255,255,255,.55)'; g.fillRect(px+7,py+9,2,6); return; }
   const barrel=nd===undefined?(lx<0||ly<0):!!nd;
-  g.save(); g.translate(cx,cy);
-  if(barrel){ g.rotate(ang(lx,ly)+Math.PI); /* 짝이 왼쪽(−x), 바늘이 오른쪽(+x) */
-    g.fillStyle=k.b; rr(g,-10,-7.5,14.5,15,[0,3.5,3.5,0]); g.fill(); g.stroke();
-    g.fillStyle='rgba(255,255,255,.72)'; g.fillRect(-8,-3.5,10,7); g.fillStyle=k.d; g.fillRect(-8,-3.5,4,7);
-    g.strokeStyle='rgba(58,48,66,.5)'; g.beginPath(); for(let i=-3;i<=1;i+=2){ g.moveTo(i,-3.5); g.lineTo(i,-1); } g.stroke();
-    g.fillStyle=k.d; g.strokeStyle='rgba(58,48,66,.75)'; rr(g,4.5,-2.8,2.5,5.6,1); g.fill(); g.stroke();
-    g.strokeStyle=C.ink; g.lineWidth=1.4; g.beginPath(); g.moveTo(7,0); g.lineTo(10.5,0); g.stroke();
-  } else { g.rotate(ang(lx,ly)); /* 짝이 오른쪽(+x), 밀대가 왼쪽(−x) */
-    g.fillStyle=k.d; rr(g,-10,-5.5,2.5,11,1); g.fill(); g.stroke();      /* 누르개 */
-    g.fillStyle=k.d; g.fillRect(-7.5,-2,3,4);                            /* 밀대 막대 */
-    g.fillStyle=k.b; rr(g,-5.5,-9,3,18,1.5); g.fill(); g.stroke();       /* 손가락 날개 */
-    g.fillStyle=k.b; rr(g,-2.5,-7.5,12.5,15,0); g.fill(); g.stroke();    /* 통의 뒤쪽 */
-    g.fillStyle='rgba(58,48,66,.35)'; g.fillRect(4.5,-7,2,14);           /* 고무 마개 */
-    g.fillStyle='rgba(255,255,255,.5)'; g.fillRect(-1,-5.5,5,2);
+  g.save(); g.translate(px+s/2,py+s/2); g.rotate(ang(lx,ly)+(barrel?Math.PI:0)); /* 가로 그림을 짝 방향에 맞춰 돌린다 */
+  if(barrel){ /* 통: 왼쪽이 짝(밀대) 쪽, 오른쪽 끝에 바늘 */
+    g.fillStyle=k.b; rr(g,-10,-6,14,12,[0,3,3,0]); g.fill(); g.stroke();
+    g.fillStyle='rgba(255,255,255,.7)'; g.fillRect(-7,-3,8,6); g.fillStyle=k.d; g.fillRect(-7,-3,3,6);
+    g.strokeStyle='rgba(58,48,66,.5)'; g.beginPath(); for(let i=-5;i<=-1;i+=2){ g.moveTo(i,-3); g.lineTo(i,-1); } g.stroke();
+    g.fillStyle=k.d; g.fillRect(4,-2,2,4); g.strokeStyle=C.ink; g.lineWidth=1.2; g.beginPath(); g.moveTo(6,0); g.lineTo(10,0); g.stroke();
+  } else { /* 밀대: 오른쪽이 짝(통) 쪽, 왼쪽 끝에 손잡이 날개 */
+    g.fillStyle=k.b; rr(g,-4,-4,14,8,[2,0,0,2]); g.fill(); g.stroke();
+    g.fillStyle=k.b; rr(g,-10,-7,5,14,2); g.fill(); g.stroke();
+    g.fillStyle='rgba(255,255,255,.5)'; g.fillRect(-2,-2,10,2);
   }
   g.restore();
 }
@@ -145,8 +135,7 @@ function render(g,S,T){
   for(const f of S.fx){ if(f.kind!=='virus') continue; const u=1-f.t/E.CLEAR_T, px=BX+f.x*CELL+CELL/2, py=BY+f.y*CELL+CELL/2; g.strokeStyle=col(f.c).b; g.globalAlpha=1-u; g.lineWidth=2; g.beginPath(); g.arc(px,py,6+u*16,0,Math.PI*2); g.stroke(); g.globalAlpha=1; }
   /* 오른쪽: 다음 알약 · 바이러스 수 */
   g.fillStyle=C.sub; g.font=`600 10px ${FONT}`; g.textAlign='left'; g.fillText('다음',364,178); /* 라벨과 알약 사이를 띄운다(주사기는 칸 밖으로 삐져나온다) */
-  if(S.next){ const nx=414,ny=168; const show=S.status==='play'&&S.phase!=='throw'||S.status!=='play'; if(show){ drawCell(g,nx,ny-8+14,S.next.c[0],S.next.shape,1,0,false); drawCell(g,nx+CELL,ny-8+14,S.next.c[1],S.next.shape,-1,0,true);
-    if(S.next.shape===1){ g.fillStyle=C.sub; g.font=`700 11px ${FONT}`; g.textAlign='center'; g.fillText('↺ 거꾸로',nx+CELL,ny+30); g.textAlign='left'; } } }
+  if(S.next){ const nx=414,ny=168; const show=S.status==='play'&&S.phase!=='throw'||S.status!=='play'; if(show){ drawCell(g,nx,ny-8+14,S.next.c[0],S.next.shape,1,0,false); drawCell(g,nx+CELL,ny-8+14,S.next.c[1],S.next.shape,-1,0,true); } }
   const counts={1:0,2:0,3:0}; for(const o of S.cells) if(o&&o.kind==='virus') counts[o.c]++;
   g.fillStyle=C.panel; rr(g,330,218,138,124,10); g.fill(); g.strokeStyle=C.line; g.stroke();
   g.fillStyle=C.sub; g.font=`600 10px ${FONT}`; g.fillText('바이러스',342,226);

@@ -125,13 +125,12 @@ for(const [st,tr] of [[1,0.05],[10,0.23],[20,0.43]]){ const T={rs:12345,stage:st
   assert.ok(Math.abs(cnt[2]/N-1/3)<0.015,'주사기 '+st+' '+cnt[2]/N); assert.ok(Math.abs(cnt[1]/N-tr)<0.015,'태블릿 '+st+' '+cnt[1]/N); assert.ok(Math.abs(cnt[0]/N-(2/3-tr))<0.015,'캡슐 '+st); }
 { let t1=0,t20=0; for(let seed=1;seed<=200;seed++){ const A=E.newGame({speed:1,stage:1,seed}); const B=E.newGame({speed:1,stage:20,seed}); if(A.piece.shape===1) t1++; if(B.piece.shape===1) t20++; } assert.ok(t20>t1*3,'단계 20에서 태블릿이 훨씬 잦다 '+t1+'/'+t20); }
 ok('비율: 주사기 1/3 · 태블릿 5%→43%(단계마다 +2%) · 판에서도 단계 20이 더 잦다');
-// 18) 안내: 태블릿·주사기가 처음 던져질 때 한 번만 알린다(단계가 바뀌어도 다시 알리지 않는다)
+// 18) 안내 없음(v0.07): 태블릿·주사기가 처음 나와도 글을 띄우지 않고 기록 사건도 없다 · 끌기 shift는 내려오는 중에만 한 칸씩
 { let found=null; for(let seed=1;seed<400&&!found;seed++){ const T=E.newGame({speed:1,stage:20,seed}); if(T.piece.shape===1) found=T; }
-  assert.ok(found,'단계 20에서 첫 알약이 태블릿인 판'); assert.strictEqual(found.msg,E.TOLD[1]); assert.strictEqual(found.msgT,240); assert.ok(found.events.some(e=>e.t==='gimmick'&&e.shape===1)); assert.ok(found.told[1]);
-  const T=found; settle(T); T.cells.fill(0); T.cells[E.idx(0,15)]=virus(3); T.viruses=1; T.next={c:[1,1],shape:1}; T.msg=''; T.msgT=0; T.events.length=0;
-  dropLock(T); assert.strictEqual(T.piece.shape,1,'두 번째 태블릿'); assert.ok(!T.events.some(e=>e.t==='gimmick'),'두 번째 태블릿은 알리지 않는다'); assert.strictEqual(T.msg,'');
-  T.next={c:[2,2],shape:2}; settle(T); dropLock(T); assert.strictEqual(T.piece.shape,2); assert.strictEqual(T.msg,E.TOLD[2],'주사기는 처음이라 알린다'); assert.strictEqual(T.events.filter(e=>e.t==='gimmick').length,1);
-  /* 다음 단계로 넘어가도 기억(같은 판) — 저장 뒤 불러오기에도 told가 남는다 */ const J=JSON.parse(JSON.stringify(T)); assert.ok(J.told[1]&&J.told[2]); }
-{ const T=E.newGame({speed:1,stage:1,seed:3}); assert.ok(!T.told[0],'캡슐은 알리지 않는다'); }
-ok('안내: 처음 한 번 · 화면 아래 글과 기록 · 캡슐은 없음');
+  assert.ok(found,'단계 20에서 첫 알약이 태블릿인 판'); assert.strictEqual(found.msg,''); assert.ok(!found.events.some(e=>e.t==='gimmick')); assert.strictEqual(found.told,undefined);
+  const T=found; settle(T); T.cells.fill(0); T.cells[E.idx(0,15)]=virus(3); T.viruses=1; T.next={c:[2,2],shape:2}; dropLock(T); assert.strictEqual(T.piece.shape,2); assert.strictEqual(T.msg,''); assert.ok(!T.events.some(e=>e.t==='gimmick'));
+  settle(T); const x0=T.piece.x, y0=T.piece.y; assert.ok(E.shift(T,1,0)); assert.strictEqual(T.piece.x,x0+1); assert.ok(E.shift(T,0,1)); assert.strictEqual(T.piece.y,y0+1); assert.strictEqual(T.dropT,0);
+  T.piece.x=0; assert.ok(!E.shift(T,-1,0),'벽에 막힘'); T.phase='throw'; assert.ok(!E.shift(T,1,0),'던지는 중에는 안 움직임'); }
+
+ok('안내 없음(v0.07) · 끌기 한 칸: 좌우·아래 · 벽·던지는 중엔 안 움직임');
 console.log(`핵심 시험 ${n}개 통과`);

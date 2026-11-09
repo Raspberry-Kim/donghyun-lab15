@@ -1,4 +1,4 @@
-/* 동현닥 앱: 동현랭 편집기 → 출전 규약(속도·바이러스 단계·깔린 알약) → 키보드·게임패드 조작. 마우스·손가락 조작은 없다. 동현큐·동현램과 같은 키 배치와 저장 방식. */
+/* 동현닥 앱: 동현랭 편집기 → 출전 규약(속도·바이러스 단계·깔린 알약) → 키보드·마우스(손가락)·게임패드 조작. 동현큐·동현램과 같은 키 배치와 저장 방식. */
 (function(){
 const HINT0='<span><kbd>←</kbd><kbd>→</kbd>옮기기</span><span><kbd>↓</kbd>내리기</span><span><kbd>X</kbd><kbd>Z</kbd>돌리기</span><span><kbd>A</kbd>설명</span><span><kbd>↵</kbd>메뉴</span>';
 const $=s=>document.querySelector(s), E=window.Engine, R=window.Render, {SPEEDS,STAGES}=E;
@@ -137,7 +137,6 @@ function events(){
   for(const ev of S.events){
     if(ev.t==='match'){ once(ev.viruses?'sparkle':'pop'); if(ev.viruses) log(`바이러스 ${ev.viruses} 지움${ev.chain>1?` (연쇄 ${ev.chain})`:''}. +${ev.gained.toLocaleString('ko-KR')}점. 남은 바이러스 ${S.viruses-ev.viruses}.`); else if(ev.chain>1) log(`알약 ${ev.pills}칸 연쇄로 지움.`); }
     else if(ev.t==='stage'){ if(S.time>0) once('zone'); }
-    else if(ev.t==='gimmick'){ log(ev.shape===1?'태블릿이 나왔다. 태블릿은 거꾸로 돈다: X·↑가 반시계, Z가 시계 방향이다.':'주사기가 나왔다. 돌릴 때마다 바늘이 따라 돌고, 바늘 쪽과 밀대 쪽 색이 맞바뀐다.'); }
     else if(SNDMAP[ev.t]) once(SNDMAP[ev.t]);
     if(ev.t==='clear') stageClear(ev);
     if(ev.t==='win') finish(true,ev);
@@ -294,7 +293,19 @@ function keyDown(k){
 }
 function keyUp(k){ if(/^(left|right|down)$/.test(k)){ if(fresh[k]) release[k]=1; else keys[k]=false; } }
 addEventListener('blur',()=>{ resetKeys(); });
-canvas.addEventListener('pointerdown',e=>{ if(!S) return; e.preventDefault(); if(mode==='over'){ backToSetup(); } else if(mode==='clear'){ nextLevel(); } else $('#board-wrap').focus({preventScroll:true}); }); /* 화면을 찍어도 조작은 되지 않는다. 결과 카드만 넘긴다 */
+/* 마우스·손가락(v0.07): 내려오는 알약을 찍으면 X(시계 돌리기), 약병 안에서 잡아 끌면 가로 한 칸(20px)마다 좌우로 옮기고 아래로 한 칸마다 한 줄 내린다. 결과 카드는 찍으면 넘긴다 */
+const ptr={id:null,x0:0,y0:0,sx:0,sy:0,moved:false};
+function toBoard(e){ const r=canvas.getBoundingClientRect(); return {x:(e.clientX-r.left)*E.W/r.width, y:(e.clientY-r.top)*E.H/r.height}; }
+function canPlay(){ return S&&mode==='play'&&!menu&&S.status==='play'&&S.phase==='fall'&&S.piece; }
+function onPill(q){ const cs=E.cellsOf(S.piece); return cs.some(c=>{ const cx=E.BX+c.x*E.CELL+E.CELL/2, cy=E.BY+c.y*E.CELL+E.CELL/2; return Math.abs(q.x-cx)<=E.CELL*1.5&&Math.abs(q.y-cy)<=E.CELL*1.5; }); } /* 알약 칸 둘레 한 칸까지 봐 준다 */
+canvas.addEventListener('pointerdown',e=>{ if(!S) return; e.preventDefault(); if(mode==='over'){ backToSetup(); return; } if(mode==='clear'){ nextLevel(); return; } $('#board-wrap').focus({preventScroll:true});
+  if(!canPlay()) return; const q=toBoard(e); ptr.id=e.pointerId; ptr.x0=ptr.sx=q.x; ptr.y0=ptr.sy=q.y; ptr.moved=false; try{ canvas.setPointerCapture(e.pointerId); }catch(_){} });
+canvas.addEventListener('pointermove',e=>{ if(ptr.id!==e.pointerId) return; e.preventDefault(); const q=toBoard(e);
+  if(Math.hypot(q.x-ptr.x0,q.y-ptr.y0)>8) ptr.moved=true; if(!canPlay()) return;
+  while(q.x-ptr.sx>=E.CELL){ ptr.sx+=E.CELL; E.shift(S,1,0); } while(ptr.sx-q.x>=E.CELL){ ptr.sx-=E.CELL; E.shift(S,-1,0); }
+  while(q.y-ptr.sy>=E.CELL){ ptr.sy+=E.CELL; E.shift(S,0,1); } if(q.y<ptr.sy) ptr.sy=q.y; /* 위로 끌어도 올라가지 않는다 */ });
+function ptrEnd(e,tap){ if(ptr.id!==e.pointerId) return; ptr.id=null; if(tap&&!ptr.moved&&canPlay()&&onPill(toBoard(e))) E.rotate(S,1); }
+canvas.addEventListener('pointerup',e=>ptrEnd(e,true)); canvas.addEventListener('pointercancel',e=>ptrEnd(e,false));
 $('#result-card').addEventListener('pointerdown',e=>{ if(e.target.tagName==='BUTTON') return; if(mode==='clear') nextLevel(); else if(mode==='over') backToSetup(); });
 
 /* ---------- 시험용 연결 ---------- */

@@ -1,5 +1,5 @@
 // 화면 시험: node qa/ui.cjs (build 뒤 index.html을 파일로 연다)
-// 첫 화면·규약 오류·예제 여섯·키보드(←→↓·X·Z·A·Enter)·마우스로는 안 움직임·메뉴 저장 칸 3개·.dhsave·첫 화면 칸 목록·클리어 카드→다음 단계·결과 카드·전체 화면·휴대폰 띠·콘솔 오류
+// 첫 화면·규약 오류·예제 여섯·키보드(←→↓·X·Z·A·Enter)·마우스 찍기 X·끌기 ←→↓·메뉴 저장 칸 3개·.dhsave·첫 화면 칸 목록·클리어 카드→다음 단계·결과 카드·전체 화면·휴대폰 띠·콘솔 오류
 const {chromium}=require('/home/user/node_modules/playwright'); const path=require('path'); const assert=require('assert'); const fs=require('fs');
 const url='file://'+path.join(__dirname,'..','index.html');
 const H='window.__donghyundoc';
@@ -23,7 +23,7 @@ const H='window.__donghyundoc';
   assert.deepStrictEqual(await p.$$eval('.slot-btn',a=>a.map(b=>b.disabled)),[true,true,true]); assert.ok(await p.$eval('#full',e=>e.disabled));
   assert.strictEqual(await p.$eval('#example',e=>e.options.length),6); assert.match(await p.$eval('#stamp-mode',e=>e.textContent),/느림/);
   assert.strictEqual(await p.$eval('.series-links',e=>e.children.length),16); assert.strictEqual(await p.$eval('.series-item.is-current .series-name',e=>e.textContent.replace('™','')),'동현닥');
-  assert.strictEqual(await p.$$eval('.input-marks .mark',a=>a.map(m=>m.classList.contains('on')).join()),'true,false,true,true','입력 표식: 키보드 on · 마우스 off · 게임패드 on · 전체 화면 on');
+  assert.strictEqual(await p.$$eval('.input-marks .mark',a=>a.map(m=>m.classList.contains('on')).join()),'true,true,true,true','입력 표식: 넷 모두 on(v0.07 마우스 켬)');
   assert.strictEqual(await p.$('#touchpad'),null,'터치패드 없음'); assert.ok(await G('window.Sprites.DOCTOR.complete && window.Sprites.DOCTOR.naturalWidth>0'),'포동이 그림 로드'); ok('첫 화면: 설정 패널 · 칸 비어 있음 · 예제 6 · 띠 16 · 입력 표식 · 터치패드 없음 · 포동이 그림');
   // 1) 규약 오류
   await p.fill('#code','나는 동현이냐?\n뿡뿡 도오오오옹~뿡뿡뿡\n동현이구나'); await p.click('#run'); await p.waitForTimeout(100);
@@ -49,8 +49,18 @@ const H='window.__donghyundoc';
   await p.keyboard.press('KeyA'); await p.waitForTimeout(100); assert.match(await G('S.msg'),/느림:/,'A 설명');
   await p.keyboard.press('Enter'); await p.waitForTimeout(100); assert.match(await menuText(),/잠시 멈춤/); const fr0=await G('S.time'); await p.waitForTimeout(400); assert.strictEqual(await G('S.time'),fr0,'메뉴 동안 멎음'); await mi('속도 설명'); assert.match(await menuText(),/느림:/); await p.keyboard.press('KeyZ'); await p.waitForTimeout(60); assert.match(await menuText(),/잠시 멈춤/); await mi('계속 간다'); assert.strictEqual(await menuText(),''); await p.waitForTimeout(200); assert.ok((await G('S.time'))>fr0,'계속 간다 뒤 흐른다');
   ok('키보드: ← → 한 칸 · X 시계 · Z 반시계 · ↓ 빨리 · A 설명 · Enter 메뉴(멎음) · 속도 설명 · 계속 간다');
-  // 4) 마우스로 화면을 찍어도 알약은 움직이지 않는다
-  await X(`S.piece.x=3; S.piece.rot=0;`); const r=await bb(); await p.mouse.click(r.x+r.w*0.2,r.y+r.h*0.5); await p.waitForTimeout(150); t=await txt(); assert.deepStrictEqual([t.piece.x,t.piece.rot],[3,0],'마우스 찍기로는 안 움직임'); ok('마우스: 화면을 찍어도 움직이지 않음');
+  // 4) 마우스·손가락(v0.07): 알약을 찍으면 X(시계) · 멀리 찍으면 그대로 · 끌면 가로 20px마다 한 칸 · 아래로 20px마다 한 줄 · 위로는 안 올라감
+  { await X(`S.phase='fall'; S.piece.x=3; S.piece.y=5; S.piece.rot=0; S.piece.shape=0; S.dropT=-1e6;`); const r=await bb(), k=r.w/480; const at=(cx,cy)=>[r.x+cx*k,r.y+cy*k];
+    const E0=await G('({BX:E.BX,BY:E.BY,C:E.CELL})'); const pc=at(E0.BX+3*E0.C+10,E0.BY+5*E0.C+10);
+    await p.mouse.click(...pc); await p.waitForTimeout(80); t=await txt(); assert.strictEqual(t.piece.rot,1,'알약 찍기 = X 시계');
+    await p.mouse.click(...at(E0.BX+7*E0.C+10,E0.BY+14*E0.C+10)); await p.waitForTimeout(80); t=await txt(); assert.strictEqual(t.piece.rot,1,'멀리 찍으면 안 돈다');
+    await X(`S.piece.rot=0; S.piece.shape=1;`); await p.mouse.click(...pc); await p.waitForTimeout(80); t=await txt(); assert.strictEqual(t.piece.rot,3,'태블릿은 찍어도 거꾸로');
+    await X(`S.piece.rot=0; S.piece.shape=0;`); const s0=at(200,120); await p.mouse.move(...s0); await p.mouse.down(); for(let i=1;i<=9;i++) await p.mouse.move(s0[0]+i*5*k,s0[1]); await p.waitForTimeout(40); t=await txt(); assert.strictEqual(t.piece.x,5,'오른쪽 45px 끌기 = 두 칸');
+    for(let i=1;i<=6;i++) await p.mouse.move(s0[0]+45*k-i*5*k,s0[1]); t=await txt(); assert.strictEqual(t.piece.x,4,'왼쪽 30px = 한 칸');
+    for(let i=1;i<=9;i++) await p.mouse.move(s0[0]+15*k,s0[1]+i*5*k); t=await txt(); assert.deepStrictEqual([t.piece.x,t.piece.y],[4,7],'아래 45px = 두 줄');
+    for(let i=1;i<=6;i++) await p.mouse.move(s0[0]+15*k,s0[1]+45*k-i*10*k); t=await txt(); assert.strictEqual(t.piece.y,7,'위로는 안 올라감'); await p.mouse.up(); await p.waitForTimeout(60); t=await txt(); assert.strictEqual(t.piece.rot,0,'끈 뒤 놓아도 돌지 않음');
+    await p.keyboard.press('Enter'); await p.waitForTimeout(80); await p.mouse.click(...pc); await p.waitForTimeout(80); t=await txt(); assert.strictEqual(t.piece.rot,0,'메뉴 동안 찍어도 그대로'); await p.keyboard.press('KeyZ'); await p.waitForTimeout(80);
+    await X(`S.dropT=0;`); ok('마우스: 알약 찍기 X · 태블릿 거꾸로 · 끌기 좌우·아래 · 위로는 안 감 · 메뉴 중 무시'); }
   // 5) 저장 메뉴
   await p.evaluate(()=>{ window.__dl=null; URL.createObjectURL=(blob)=>{ blob.text().then(t=>window.__dl=t); return 'blob:x'; }; URL.revokeObjectURL=()=>{}; HTMLAnchorElement.prototype.click=function(){ window.__dlname=this.download; }; });
   await X(`S.score=1200;`); await p.keyboard.press('Enter'); await p.waitForTimeout(80); await mi('저장'); assert.match(await menuText(),/^저장/); await mi('브라우저 칸 1'); assert.strictEqual(await menuText(),''); const s1=await p.evaluate(()=>JSON.parse(localStorage.getItem('donghyundoc:slot1'))); assert.strictEqual(s1.format,'donghyundoc-save'); assert.strictEqual(s1.summary.speed,'느림'); assert.strictEqual(s1.state.score,1200); const savedScore=1200;
@@ -95,13 +105,13 @@ const H='window.__donghyundoc';
   await m.tap('#full'); await m.waitForTimeout(500); assert.ok(!(await m.$eval('#exit-full',e=>e.hidden))); assert.ok((await m.$eval('#board',e=>e.getBoundingClientRect().width))>=360); await m.tap('#exit-full'); await m.waitForTimeout(300); assert.ok(await m.$eval('#exit-full',e=>e.hidden));
   assert.strictEqual(await m.$eval('.series-links',e=>e.children.length),16); const strip=await m.$eval('.series-links',e=>{ const n=e.children.length, L=e.querySelector('.series-item[data-series="lang"]'); const r=[...e.children].map(c=>c.getBoundingClientRect()); return {n, langW:L.getBoundingClientRect().width, otherW:r[1].width}; });
   assert.ok(Math.abs(strip.langW-strip.otherW)<2,'16개(짝수)라 동현랭도 반 폭 '+JSON.stringify(strip)); ok('휴대폰: 터치패드 없음 · 전체 화면 · 띠 16 짝수 → 동현랭 반 폭');
-  { /* v0.05 · 안내 글은 왼쪽 아래 조작 안내 자리에 뜨고 약병을 가리지 않는다. 줄은 폭 116px 안에 7줄까지 */
+  { /* v0.06 · 안내 글(A 속도 설명)은 왼쪽 아래 조작 안내 자리에 뜨고 약병을 가리지 않는다. 줄은 폭 116px 안에 7줄까지 */
     const q=await b.newPage(); q.on('pageerror',e=>errs.push(e.message)); await q.goto(url); await q.waitForTimeout(300);
     const r=await q.evaluate(()=>{ const E=window.Engine,R=window.Render; const cv=document.createElement('canvas'); cv.width=E.W; cv.height=E.H; const g=cv.getContext('2d');
-      const msgs=[E.TOLD[1],E.TOLD[2],...E.SPEEDS.map(m=>`${m.name}: ${m.desc}`)]; let worst=0, maxLines=0;
+      const msgs=[...E.SPEEDS.map(m=>`${m.name}: ${m.desc}`)]; let worst=0, maxLines=0;
       g.font='600 10px Pretendard, sans-serif'; for(const m of msgs){ const ls=R.wrapText(g,m,116); maxLines=Math.max(maxLines,ls.length); for(const l of ls) worst=Math.max(worst,g.measureText(l).width); if(ls.join('').replace(/ /g,'')!==m.replace(/ /g,'')) return {lost:m}; }
       const shot=(msg)=>{ const S=E.newGame({speed:1,stage:3,seed:5}); S.msg=msg; S.msgT=msg?100:0; R.render(g,S,10); return Array.from(g.getImageData(E.BX-4,E.BY-20,E.GW*E.CELL+8,E.GH*E.CELL+24).data); };
-      const a=shot(''), bb=shot(E.TOLD[1]); let diff=0; for(let i=0;i<a.length;i++) if(a[i]!==bb[i]) diff++; return {worst,maxLines,diff}; });
+      const a=shot(''), bb=shot(`${E.SPEEDS[2].name}: ${E.SPEEDS[2].desc}`); let diff=0; for(let i=0;i<a.length;i++) if(a[i]!==bb[i]) diff++; return {worst,maxLines,diff}; });
     assert.ok(!r.lost,'줄 나눔에서 글자가 빠졌다 '+r.lost); assert.ok(r.worst<=116,'줄 폭 '+r.worst); assert.ok(r.maxLines<=7); assert.strictEqual(r.diff,0,'안내 글이 약병을 가린다');
     await q.close(); ok('안내 글: 왼쪽 아래 · 약병을 가리지 않음 · 줄 폭 116px 안'); }
   await ctx.close(); await b.close();

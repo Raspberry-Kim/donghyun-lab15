@@ -56,10 +56,9 @@ function newPiece(S){ return {c:[ri(S,1,COLORS),ri(S,1,COLORS)],shape:pickShape(
 /* 주사기 바늘 칸: 바늘은 돌리는 방향대로 오른쪽→아래→왼쪽→위를 가리키지만 색은 캡슐처럼 움직여서, 돌릴 때마다 바늘 쪽과 밀대 쪽 색이 맞바뀐다.
    cellsOf의 [A,B] 가운데 바늘이 있는 칸: rot 0·3은 B, rot 1·2는 A */
 function needleIdx(rot){ return rot===0||rot===3?1:0; }
-const TOLD={1:'태블릿은 거꾸로 돈다 · X·↑ 반시계 · Z 시계',2:'주사기는 돌릴 때마다 바늘·밀대 색이 맞바뀐다'};
 function newGame({speed=1,stage=1,pre=0,seed=1}={}){
   const S={rs:(seed>>>0)||1,speedI:speed-1,stage,pre,score:0,time:0,status:'play',phase:'throw',pt:0,pieces:0,stagesDone:0,chain:0,comboV:0,
-    cells:new Array(GW*GH).fill(0),viruses:0,told:{},piece:null,next:null,dropT:0,dasT:0,dasDir:0,marks:[],fx:[],events:[],msg:'',msgT:0,lastClear:null};
+    cells:new Array(GW*GH).fill(0),viruses:0,piece:null,next:null,dropT:0,dasT:0,dasDir:0,marks:[],fx:[],events:[],msg:'',msgT:0,lastClear:null};
   placeViruses(S); if(pre>0) placePre(S);
   S.next=newPiece(S); throwNext(S);
   S.events.push({t:'stage',stage});
@@ -82,9 +81,10 @@ function throwNext(S){
   const p={x:3,y:0,rot:0,c:S.next.c,shape:S.next.shape}; S.piece=p; S.next=newPiece(S); S.comboV=0; S.chain=0;
   if(!fits(S,p)){ S.status='over'; S.phase='fall'; S.events.push({t:'over'}); return; }
   S.phase='throw'; S.pt=0; S.events.push({t:'throw'});
-  if(!S.told) S.told={};
-  if(TOLD[p.shape]&&!S.told[p.shape]){ S.told[p.shape]=true; S.msg=TOLD[p.shape]; S.msgT=240; S.events.push({t:'gimmick',shape:p.shape,text:TOLD[p.shape]}); }
 }
+function shift(S,dx,dy){ /* 마우스·손가락 끌기(v0.07): 한 칸 옮기기(dx ±1) 또는 한 칸 내리기(dy 1). 막히면 그대로(굳는 것은 원래 내려오는 박자에 맡긴다) */
+  if(S.status!=='play'||S.phase!=='fall'||!S.piece) return false;
+  if(!tryMove(S,dx,dy)) return false; if(dy) S.dropT=0; S.events.push({t:'move'}); return true; }
 function tryMove(S,dx,dy){ const p=S.piece, q={...p,x:p.x+dx,y:p.y+dy}; if(fits(S,q)){ p.x=q.x; p.y=q.y; return true; } return false; }
 function rotate(S,dir){ /* dir +1 시계 방향(X·↑), -1 반시계(Z). 태블릿은 거꾸로 돈다(+1이 반시계). 벽에 막히면 왼쪽으로 한 칸 밀어 본다(원작의 벽 차기) */
   if(S.status!=='play'||S.phase!=='fall'||!S.piece) return false;
@@ -165,5 +165,5 @@ function step(S,keys){
   if(S.phase==='drop'){ S.pt++; if(S.pt>=DROP_T){ S.pt=0; if(!gravityStep(S)){ S.phase='fall'; afterSettle(S); } } return; }
 }
 const speedOf=S=>SPEEDS[S.speedI];
-root.Engine={GW,GH,CELL,BX,BY,W,H,SPEEDS,STAGES,COLORS,SHAPES,THROW,CLEAR_T,STAGE_BONUS,newGame,step,rotate,nextStage,cellsOf,needleIdx,tabletRate,pickShape,TOLD,findMatches,gravityStep,virusCount,virusRows,framesPerDrop,speedOf,at,idx};
+root.Engine={GW,GH,CELL,BX,BY,W,H,SPEEDS,STAGES,COLORS,SHAPES,THROW,CLEAR_T,STAGE_BONUS,newGame,step,rotate,nextStage,cellsOf,needleIdx,tabletRate,pickShape,shift,findMatches,gravityStep,virusCount,virusRows,framesPerDrop,speedOf,at,idx};
 })(typeof window!=='undefined'?window:(typeof module!=='undefined'?module.exports:this));
