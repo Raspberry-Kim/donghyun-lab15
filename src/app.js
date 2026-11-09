@@ -278,7 +278,7 @@ document.addEventListener('keydown',e=>{
   const k=keyOf(e); if(!k) return; e.preventDefault(); if(e.repeat) return; keyDown(k);
 });
 document.addEventListener('keyup',e=>{ const k=keyOf(e); if(!k) return; keyUp(k); });
-GP.start({hint:'A 시계 · B 반시계 돌리기 · Y 설명 · + 메뉴',status:t=>status(t),
+GP.start({hint:'A·↑ 시계 · B 반시계 돌리기 · Y 설명 · + 메뉴',status:t=>status(t),
   down(k){ if(!S||tab!=='play') return; keyDown(k); }, up(k){ if(!S) return; keyUp(k); }});
 function keyDown(k){
   if(!S) return;
@@ -286,9 +286,8 @@ function keyDown(k){
   if(mode==='clear'){ if(k==='x'||k==='enter') nextLevel(); return; }
   if(menu){ if(k==='up'||k==='down'){ const n=menu.items.length; menu.i=(menu.i+(k==='up'?-1:1)+n)%n; drawMenu(); } else if(k==='x'||k==='enter'){ pick(); } else if(k==='z'){ cancelMenu(); } return; }
   if(/^(left|right|down)$/.test(k)){ if(!keys[k]) fresh[k]=1; keys[k]=true; }
-  else if(k==='x'){ E.rotate(S,1); }
+  else if(k==='x'||k==='up'){ E.rotate(S,1); } /* ↑는 X와 같은 시계 방향 돌리기(v0.03) */
   else if(k==='z'){ E.rotate(S,-1); }
-  else if(k==='up'){ /* ↑는 쓰지 않는다 */ }
   else if(k==='a'){ const m=E.speedOf(S); S.msg=`${m.name}: ${m.desc}`; S.msgT=200; }
   else if(k==='enter') mainMenu();
 }

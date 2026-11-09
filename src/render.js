@@ -104,7 +104,7 @@ function render(g,S,T){
   card(g,12,188,124,46,'점수',S.score.toLocaleString('ko-KR'),S.score>=100000);
   if(S.lastClear){ card(g,12,242,124,46,'마지막 지움',`${S.lastClear.v}바이러스 +${S.lastClear.gained.toLocaleString('ko-KR')}`,true); }
   g.fillStyle=C.sub; g.font=`500 10px ${FONT}`; g.textAlign='center'; g.textBaseline='top';
-  g.fillText('←→ 옮기기 · ↓ 빨리 내리기',74,300); g.fillText('X 시계 · Z 반시계로 돌리기',74,314); g.fillText('Enter 메뉴',74,328);
+  g.fillText('←→ 옮기기 · ↓ 빨리 내리기',74,300); g.fillText('X·↑ 시계 · Z 반시계로 돌리기',74,314); g.fillText('Enter 메뉴',74,328);
   bottle(g);
   /* 칸 */
   const frame=Math.floor(T/24)%2, marks=new Set(S.marks);
