@@ -100,6 +100,14 @@ function bottle(g){
 }
 
 /* ---------- 패널 ---------- */
+function wrapText(g,t,maxW){ /* 넘치면 ' · ' 뒤에서 먼저 끊고, 없으면 마지막 띄어쓰기에서 끊는다. 한 글자 낱말('한 칸'의 '한') 바로 뒤에서는 끊지 않는다. 띄어쓰기가 없으면 그 자리에서 */
+  const cut=(line)=>{ const d=line.lastIndexOf(' · '); if(d>0) return [line.slice(0,d+2),line.slice(d+3)];
+    for(let k=line.lastIndexOf(' ');k>0;k=line.lastIndexOf(' ',k-1)){ const prev=line.lastIndexOf(' ',k-1); if(k-prev-1>1) return [line.slice(0,k),line.slice(k+1)]; }
+    return null; };
+  const out=[]; let cur='';
+  for(const ch of t){ const n=cur+ch; if(g.measureText(n).width<=maxW||!cur){ cur=n; continue; }
+    const c=cut(n); if(c&&g.measureText(c[0]).width<=maxW){ out.push(c[0].trim()); cur=c[1]; } else { out.push(cur.trim()); cur=ch===' '?'':ch; } }
+  if(cur.trim()) out.push(cur.trim()); return out; }
 function card(g,x,y,w,h,label,value,small){
   g.fillStyle=C.panel; rr(g,x,y,w,h,8); g.fill(); g.strokeStyle=C.line; g.lineWidth=1; g.stroke();
   g.fillStyle=C.sub; g.font=`600 10px ${FONT}`; g.textAlign='left'; g.textBaseline='top'; g.fillText(label,x+10,y+8);
@@ -115,7 +123,7 @@ function render(g,S,T){
   card(g,12,188,124,46,'점수',S.score.toLocaleString('ko-KR'),S.score>=100000);
   if(S.lastClear){ card(g,12,242,124,46,'마지막 지움',`${S.lastClear.v}바이러스 +${S.lastClear.gained.toLocaleString('ko-KR')}`,true); }
   g.fillStyle=C.sub; g.font=`500 10px ${FONT}`; g.textAlign='center'; g.textBaseline='top';
-  g.fillText('←→ 옮기기 · ↓ 빨리 내리기',74,300); g.fillText('X·↑ 시계 · Z 반시계로 돌리기',74,314); g.fillText('Enter 메뉴',74,328);
+  if(!(S.msg&&S.msgT>0)){ g.fillText('←→ 옮기기 · ↓ 빨리 내리기',74,300); g.fillText('X·↑ 시계 · Z 반시계로 돌리기',74,314); g.fillText('Enter 메뉴',74,328); } /* 안내 글이 뜨면 그 자리를 비켜 준다 */
   bottle(g);
   /* 칸 */
   const frame=Math.floor(T/24)%2, marks=new Set(S.marks);
@@ -145,8 +153,10 @@ function render(g,S,T){
   const names={1:'빨강',2:'파랑',3:'노랑'};
   [1,2,3].forEach((c,i)=>{ const y=244+i*30; drawVirus(g,342,y,c,(frame+i)%2); g.fillStyle=C.ink; g.font=`700 14px ${FONT}`; g.textAlign='left'; g.fillText(String(counts[c]),372,y+3); g.fillStyle=C.sub; g.font=`500 10px ${FONT}`; g.fillText(names[c],400,y+5); });
   /* 안내 메시지 */
-  if(S.msg&&S.msgT>0){ g.fillStyle='rgba(58,48,66,.9)'; g.font=`600 11px ${FONT}`; const tw=Math.min(300,g.measureText(S.msg).width+20); rr(g,W/2-tw/2,H-24,tw,20,6); g.fill(); g.fillStyle='#fff'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(S.msg.length>48?S.msg.slice(0,47)+'…':S.msg,W/2,H-14); g.textBaseline='top'; }
+  if(S.msg&&S.msgT>0){ /* 왼쪽 아래 조작 안내 자리에 띄운다(약병을 가리지 않는다). 폭 124px에 줄을 나누고, 넘치면 위로 자란다(최대 7줄) */
+    g.font=`600 10px ${FONT}`; const lines=wrapText(g,S.msg,116).slice(0,7); const lh=13, bh=lines.length*lh+12, by=Math.min(294,346-bh);
+    g.fillStyle='rgba(58,48,66,.92)'; rr(g,12,by,124,bh,8); g.fill(); g.fillStyle='#fff'; g.textAlign='center'; g.textBaseline='top'; lines.forEach((ln,k)=>g.fillText(ln,74,by+6+k*lh)); }
   g.textAlign='left';
 }
-window.Render={render,drawCell,drawVirus,C};
+window.Render={render,drawCell,drawVirus,wrapText,C};
 })();

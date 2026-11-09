@@ -95,6 +95,15 @@ const H='window.__donghyundoc';
   await m.tap('#full'); await m.waitForTimeout(500); assert.ok(!(await m.$eval('#exit-full',e=>e.hidden))); assert.ok((await m.$eval('#board',e=>e.getBoundingClientRect().width))>=360); await m.tap('#exit-full'); await m.waitForTimeout(300); assert.ok(await m.$eval('#exit-full',e=>e.hidden));
   assert.strictEqual(await m.$eval('.series-links',e=>e.children.length),16); const strip=await m.$eval('.series-links',e=>{ const n=e.children.length, L=e.querySelector('.series-item[data-series="lang"]'); const r=[...e.children].map(c=>c.getBoundingClientRect()); return {n, langW:L.getBoundingClientRect().width, otherW:r[1].width}; });
   assert.ok(Math.abs(strip.langW-strip.otherW)<2,'16개(짝수)라 동현랭도 반 폭 '+JSON.stringify(strip)); ok('휴대폰: 터치패드 없음 · 전체 화면 · 띠 16 짝수 → 동현랭 반 폭');
+  { /* v0.05 · 안내 글은 왼쪽 아래 조작 안내 자리에 뜨고 약병을 가리지 않는다. 줄은 폭 116px 안에 7줄까지 */
+    const q=await b.newPage(); q.on('pageerror',e=>errs.push(e.message)); await q.goto(url); await q.waitForTimeout(300);
+    const r=await q.evaluate(()=>{ const E=window.Engine,R=window.Render; const cv=document.createElement('canvas'); cv.width=E.W; cv.height=E.H; const g=cv.getContext('2d');
+      const msgs=[E.TOLD[1],E.TOLD[2],...E.SPEEDS.map(m=>`${m.name}: ${m.desc}`)]; let worst=0, maxLines=0;
+      g.font='600 10px Pretendard, sans-serif'; for(const m of msgs){ const ls=R.wrapText(g,m,116); maxLines=Math.max(maxLines,ls.length); for(const l of ls) worst=Math.max(worst,g.measureText(l).width); if(ls.join('').replace(/ /g,'')!==m.replace(/ /g,'')) return {lost:m}; }
+      const shot=(msg)=>{ const S=E.newGame({speed:1,stage:3,seed:5}); S.msg=msg; S.msgT=msg?100:0; R.render(g,S,10); return Array.from(g.getImageData(E.BX-4,E.BY-20,E.GW*E.CELL+8,E.GH*E.CELL+24).data); };
+      const a=shot(''), bb=shot(E.TOLD[1]); let diff=0; for(let i=0;i<a.length;i++) if(a[i]!==bb[i]) diff++; return {worst,maxLines,diff}; });
+    assert.ok(!r.lost,'줄 나눔에서 글자가 빠졌다 '+r.lost); assert.ok(r.worst<=116,'줄 폭 '+r.worst); assert.ok(r.maxLines<=7); assert.strictEqual(r.diff,0,'안내 글이 약병을 가린다');
+    await q.close(); ok('안내 글: 왼쪽 아래 · 약병을 가리지 않음 · 줄 폭 116px 안'); }
   await ctx.close(); await b.close();
   if(errs.length){ console.error('콘솔 오류',errs); process.exit(1); }
   console.log(`\n${n} ui tests passed · 콘솔 오류 0`);

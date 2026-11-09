@@ -1,4 +1,4 @@
-# 동현닥 v0.05
+# 동현닥 v0.06
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24084897.svg)](https://doi.org/10.5281/zenodo.24084897)
 
@@ -73,7 +73,7 @@
 
 - `index.html` — 묶은 한 파일(글꼴·포동이 그림 포함). `node build.cjs`로 `src/`에서 만든다.
 - `src/engine.js` 약병·알약·회전·지움·떨어지기·연쇄·점수·단계 · `src/render.js` 화면 · `src/sprites.js` 바이러스 얼굴과 닥터 포동이 · `src/app.js` 조작·메뉴·저장 · `src/examples.js` 예제 · `src/donghyun.js` 동현랭 실행기 v1.55 · `src/sfx.js` 효과음 · `src/gamepad.js` 게임패드.
-- `qa/core-tests.cjs` 엔진 검사 18 · `qa/bot.cjs` 규칙 봇 여섯 설정(멈춤·값 깨짐이 없는지만 본다. 봇은 약해서 단계를 거의 못 깬다) · `qa/ui.cjs` 화면 검사 14(Playwright).
+- `qa/core-tests.cjs` 엔진 검사 18 · `qa/bot.cjs` 규칙 봇 여섯 설정(멈춤·값 깨짐이 없는지만 본다. 봇은 약해서 단계를 거의 못 깬다) · `qa/ui.cjs` 화면 검사 15(Playwright).
 
 ## 출처와 라이선스
 
