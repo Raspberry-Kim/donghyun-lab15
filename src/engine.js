@@ -1,4 +1,4 @@
-/* 동현닥 엔진: 8×16 병 안에 두 칸짜리 알약(캡슐·태블릿·주사기)을 떨어뜨려 같은 색 넷을 가로·세로로 맞추면 사라지고, 바이러스를 모두 없애면 단계 클리어.
+/* 동현닥 엔진: 8×16 약병 안에 두 칸짜리 알약(캡슐·태블릿·주사기)을 떨어뜨려 같은 색 넷을 가로·세로로 맞추면 사라지고, 바이러스를 모두 없애면 단계 클리어.
    화면과 무관한 순수 상태 기계다. 조작은 step(S,keys)의 keys{left,right,down}와 rotate(S,dir)로 들어온다. */
 (function(root){
 const GW=8, GH=16, CELL=20, BX=150, BY=26, W=480, H=360;
@@ -17,7 +17,7 @@ function ri(S,a,b){ return a+Math.floor(rng(S)*(b-a+1)); }
 /* ---------- 칸 ---------- */
 const idx=(x,y)=>y*GW+x;
 function at(S,x,y){ return (x<0||x>=GW||y<0||y>=GH)?null:S.cells[idx(x,y)]; }
-function free(S,x,y){ return x>=0&&x<GW&&y<GH&&(y<0||!S.cells[idx(x,y)]); } /* 병목 위(y<0)는 비어 있다고 본다 */
+function free(S,x,y){ return x>=0&&x<GW&&y<GH&&(y<0||!S.cells[idx(x,y)]); } /* 약병 입구 위(y<0)는 비어 있다고 본다 */
 function runAt(S,x,y,c){ /* (x,y)에 색 c를 두면 생기는 가로·세로 최대 연속 길이 */
   let best=1;
   for(const [dx,dy] of [[1,0],[0,1]]){ let n=1;

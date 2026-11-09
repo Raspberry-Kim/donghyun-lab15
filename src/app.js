@@ -183,11 +183,11 @@ function backToSetup(){
   preview(cfg); status('출전 준비'); result('다시 나서려면 코드를 고치거나 그대로 출전을 누르자.'); $('#hint').innerHTML=HINT0; renderSlotList();
 }
 function finish(win,ev){
-  mode='over'; status(win?'스무 단계 완료':'병목이 막힘',win?'':'error'); resetKeys();
-  log(win?`단계 ${STAGES}까지 모두 마쳤다. 점수 ${S.score.toLocaleString('ko-KR')}.`:'병목이 막혀 알약을 넣을 수 없다.'); $('#hint').innerHTML='<span><kbd>X</kbd><kbd>↵</kbd>출전 준비로</span>';
+  mode='over'; status(win?'스무 단계 완료':'치료 실패',win?'':'error'); resetKeys();
+  log(win?`단계 ${STAGES}까지 모두 마쳤다. 점수 ${S.score.toLocaleString('ko-KR')}.`:'치료 실패 · 약병 입구가 막혀 알약을 넣을 수 없다.'); $('#hint').innerHTML='<span><kbd>X</kbd><kbd>↵</kbd>출전 준비로</span>';
 }
 function resultCard(win){
-  $('#result-card').innerHTML=`<div><h3 class="${win?'win':'lose'}">${win?'스무 단계를 모두 마쳤다':'병목이 막혔다'}</h3><div class="rc-grid"><div><span>점수</span><strong>${S.score.toLocaleString('ko-KR')}</strong></div><div><span>마친 단계</span><strong>${S.stagesDone}</strong></div><div><span>남은 바이러스</span><strong>${S.viruses}</strong></div><div><span>시간</span><strong>${Math.floor(S.time/60)}초</strong></div></div><p>X 또는 Enter로 출전 준비로 돌아간다.</p><button type="button" id="rc-back">출전 준비로</button></div>`;
+  $('#result-card').innerHTML=`<div><h3 class="${win?'win':'lose'}">${win?'스무 단계를 모두 마쳤다':'치료 실패'}</h3><div class="rc-grid"><div><span>점수</span><strong>${S.score.toLocaleString('ko-KR')}</strong></div><div><span>마친 단계</span><strong>${S.stagesDone}</strong></div><div><span>남은 바이러스</span><strong>${S.viruses}</strong></div><div><span>시간</span><strong>${Math.floor(S.time/60)}초</strong></div></div><p>X 또는 Enter로 출전 준비로 돌아간다.</p><button type="button" id="rc-back">출전 준비로</button></div>`;
   $('#result-card').hidden=false; $('#rc-back').onclick=backToSetup;
 }
 $('#concede').onclick=()=>{ if(!S||mode==='over') return; confirmMenu('포기하고 출전 준비로 돌아갈까?',[['포기한다',backToSetup],['계속 간다',()=>{}]]); };
@@ -216,7 +216,7 @@ function restore(data){
   const st=data.state;
   if(!st||!(Number.isInteger(st.stage)&&st.stage>=1&&st.stage<=STAGES)) throw new Error('단계 정보가 맞지 않는다.');
   if(!(Number.isInteger(st.speedI)&&SPEEDS[st.speedI])) throw new Error('속도 정보가 맞지 않는다.');
-  if(!Array.isArray(st.cells)||st.cells.length!==E.GW*E.GH||!st.cells.every(isCell)) throw new Error('병 정보가 맞지 않는다.');
+  if(!Array.isArray(st.cells)||st.cells.length!==E.GW*E.GH||!st.cells.every(isCell)) throw new Error('약병 정보가 맞지 않는다.');
   if(!(Number.isInteger(st.viruses)&&st.viruses===st.cells.filter(o=>o&&o.kind==='virus').length)) throw new Error('바이러스 수가 맞지 않는다.');
   if(!st.next||!Array.isArray(st.next.c)) throw new Error('다음 알약 정보가 맞지 않는다.');
   if(st.piece&&!(Number.isInteger(st.piece.x)&&Number.isInteger(st.piece.y)&&Number.isInteger(st.piece.rot))) throw new Error('알약 정보가 맞지 않는다.');

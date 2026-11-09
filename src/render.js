@@ -1,4 +1,4 @@
-/* 동현닥 화면: 왼쪽 정보 · 가운데 병 · 오른쪽 닥터 포동이와 다음 알약, 바이러스 수. 알약은 캡슐·태블릿·주사기 세 모양으로 그린다(색은 같은 규칙). */
+/* 동현닥 화면: 왼쪽 정보 · 가운데 약병 · 오른쪽 닥터 포동이와 다음 알약, 바이러스 수. 알약은 캡슐·태블릿·주사기 세 모양으로 그린다(색은 같은 규칙). */
 (function(){
 const E=window.Engine, SP=window.Sprites;
 const C={paper:'#fbf7ef',panel:'#f3ecdf',line:'#d9cdb8',ink:'#3a3042',sub:'#7a7086',glass:'#ebe5f3',glassLine:'#8d84a0',dot:'rgba(74,66,88,.10)',accent:'#f2b705',white:'#ffffff'};
@@ -77,7 +77,7 @@ function drawCell(g,px,py,c,shape,lx,ly){
 }
 function drawVirus(g,px,py,c,frame){ const im=SP.face(c,frame,2); g.drawImage(im,px+1,py+1); }
 
-/* ---------- 병 ---------- */
+/* ---------- 약병 ---------- */
 function bottle(g){
   const x=BX,y=BY,w=GW*CELL,h=GH*CELL;
   g.fillStyle=C.glass; g.fillRect(x,y,w,h);
@@ -117,7 +117,7 @@ function render(g,S,T){
   if(S.piece&&S.status==='play'){
     const p=S.piece, cs=E.cellsOf(p);
     if(S.phase==='throw'){ const u=S.pt/E.THROW, G=gimmick(S), o=G.origin(S.pt); const x1=BX+3*CELL, y1=BY;
-      /* 준비 동작 동안은 알약이 포동이의 꼬리·머리·발에 붙어 있고, 때리는 순간부터 포물선으로 병목까지 날아간다 */
+      /* 준비 동작 동안은 알약이 포동이의 꼬리·머리·발에 붙어 있고, 때리는 순간부터 포물선으로 약병 입구까지 날아간다 */
       let x=o.x, y=o.y; if(u>G.hit){ const v=(u-G.hit)/(1-G.hit), e=1-(1-v)*(1-v); x=o.x+(x1-o.x)*e; y=o.y+(y1-o.y)*e-Math.sin(v*Math.PI)*36; }
       drawCell(g,x,y,p.c[0],p.shape,1,0); drawCell(g,x+CELL,y,p.c[1],p.shape,-1,0); }
     else { g.save(); g.beginPath(); g.rect(BX,BY-20,GW*CELL,GH*CELL+20); g.clip(); const [a,b]=cs; drawCell(g,BX+a.x*CELL,BY+a.y*CELL,a.c,p.shape,b.x-a.x,b.y-a.y); drawCell(g,BX+b.x*CELL,BY+b.y*CELL,b.c,p.shape,a.x-b.x,a.y-b.y); g.restore(); }
@@ -125,8 +125,8 @@ function render(g,S,T){
   /* 지움 효과 */
   for(const f of S.fx){ if(f.kind!=='virus') continue; const u=1-f.t/E.CLEAR_T, px=BX+f.x*CELL+CELL/2, py=BY+f.y*CELL+CELL/2; g.strokeStyle=col(f.c).b; g.globalAlpha=1-u; g.lineWidth=2; g.beginPath(); g.arc(px,py,6+u*16,0,Math.PI*2); g.stroke(); g.globalAlpha=1; }
   /* 오른쪽: 다음 알약 · 바이러스 수 */
-  g.fillStyle=C.sub; g.font=`600 10px ${FONT}`; g.textAlign='left'; g.fillText('다음',386,178);
-  if(S.next){ const nx=402,ny=168; const show=S.status==='play'&&S.phase!=='throw'||S.status!=='play'; if(show){ drawCell(g,nx,ny-8+14,S.next.c[0],S.next.shape,1,0); drawCell(g,nx+CELL,ny-8+14,S.next.c[1],S.next.shape,-1,0); } }
+  g.fillStyle=C.sub; g.font=`600 10px ${FONT}`; g.textAlign='left'; g.fillText('다음',364,178); /* 라벨과 알약 사이를 띄운다(주사기는 칸 밖으로 삐져나온다) */
+  if(S.next){ const nx=414,ny=168; const show=S.status==='play'&&S.phase!=='throw'||S.status!=='play'; if(show){ drawCell(g,nx,ny-8+14,S.next.c[0],S.next.shape,1,0); drawCell(g,nx+CELL,ny-8+14,S.next.c[1],S.next.shape,-1,0); } }
   const counts={1:0,2:0,3:0}; for(const o of S.cells) if(o&&o.kind==='virus') counts[o.c]++;
   g.fillStyle=C.panel; rr(g,330,218,138,124,10); g.fill(); g.strokeStyle=C.line; g.stroke();
   g.fillStyle=C.sub; g.font=`600 10px ${FONT}`; g.fillText('바이러스',342,226);

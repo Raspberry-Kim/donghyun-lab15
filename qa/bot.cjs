@@ -1,5 +1,5 @@
 // 규칙 봇: 떨어지는 알약마다 놓을 수 있는 모든 자리·회전을 셈해 점수가 가장 높은 자리(색 맞춤·바이러스 인접·낮은 높이)에 둔다.
-// 멈춤·값 깨짐이 없는지, 단계가 끝까지 가는지(혹은 병목이 막혀 끝나는지) 본다. node qa/bot.cjs
+// 멈춤·값 깨짐이 없는지, 단계가 끝까지 가는지(혹은 약병 입구가 막혀 치료 실패로 끝나는지) 본다. node qa/bot.cjs
 const E=require('../src/engine.js').Engine; const assert=require('assert');
 const {GW,GH}=E;
 function heights(S){ const h=[]; for(let x=0;x<GW;x++){ let y=0; while(y<GH&&!S.cells[E.idx(x,y)]) y++; h.push(y); } return h; }

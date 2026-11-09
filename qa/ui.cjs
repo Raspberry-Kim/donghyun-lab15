@@ -75,9 +75,9 @@ const H='window.__donghyundoc';
   /* 단계 20 → 결과 카드(끝) */
   await settle(); await X(`S.stage=20; S.cells.fill(0); const V=c=>({c,kind:'virus',shape:0,lx:0,ly:0,seed:0}); S.cells[E.idx(0,15)]=V(2); S.cells[E.idx(1,15)]=V(2); S.cells[E.idx(2,15)]=V(2); S.viruses=3; S.piece={x:3,y:0,rot:1,c:[2,1],shape:1}; S.phase='fall'; S.dropT=0; D.keys.down=true; D.step(100); D.keys.down=false;`); await p.waitForTimeout(300);
   assert.strictEqual(await G('D.mode'),'over'); assert.match(await p.$eval('#result-card',e=>e.textContent),/스무 단계를 모두 마쳤다/); await p.click('#rc-back'); assert.strictEqual(await G('D.mode'),'setup'); ok('클리어 카드(바이러스 셋 700점) → 다음 단계 2 · 단계 20 클리어 → 끝 카드');
-  // 8) 병목이 막히면 결과 카드
+  // 8) 약병 입구가 막히면 치료 실패 카드
   await startEx('fast'); await settle(); await X(`for(let y=1;y<16;y++) if(!S.cells[E.idx(3,y)]) S.cells[E.idx(3,y)]={c:(y%2)+1,kind:'pill',shape:0,lx:0,ly:0}; S.piece={x:3,y:0,rot:0,c:[3,3],shape:0}; S.phase='fall'; S.dropT=0; D.step(200);`); await p.waitForTimeout(300);
-  assert.strictEqual(await G('D.mode'),'over'); assert.match(await p.$eval('#result-card',e=>e.textContent),/병목이 막혔다/); await p.keyboard.press('Enter'); await p.waitForTimeout(100); assert.strictEqual(await G('D.mode'),'setup'); ok('병목 막힘 → 결과 카드 · Enter로 첫 화면');
+  assert.strictEqual(await G('D.mode'),'over'); assert.match(await p.$eval('#result-card',e=>e.textContent),/치료 실패/); await p.keyboard.press('Enter'); await p.waitForTimeout(100); assert.strictEqual(await G('D.mode'),'setup'); ok('병목 막힘 → 결과 카드 · Enter로 첫 화면');
   // 9) 전체 화면
   await startEx('mid'); const w0=(await bb()).w; await p.click('#full'); await p.waitForTimeout(500); assert.ok(!(await p.$eval('#exit-full',e=>e.hidden))); assert.ok((await bb()).w>w0,'전체 화면에서 판이 넓다'); await p.click('#exit-full'); await p.waitForTimeout(400); assert.ok(Math.abs((await bb()).w-w0)<2); ok('전체 화면 들어가기·나오기');
   // 10) 다른 탭을 보면 멎는다

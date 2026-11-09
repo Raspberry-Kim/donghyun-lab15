@@ -23,7 +23,7 @@ ok('새 판: 바이러스 단계×4 · 바닥 10~13줄 · 같은 색 셋 연속 
 for(const seed of [1,2,3,4,5]){ const S=E.newGame({speed:1,stage:5,pre:3,seed}); const pills=S.cells.filter(o=>o&&o.kind==='pill'); assert.strictEqual(pills.length,6); assert.ok(pills.every(o=>!o.lx&&!o.ly)); assert.strictEqual(E.findMatches(S).size,0);
   for(let y=0;y<GH-1;y++) for(let x=0;x<GW;x++){ const o=S.cells[E.idx(x,y)]; if(o&&o.kind==='pill') assert.ok(S.cells[E.idx(x,y+1)],'깔린 알약이 떠 있다'); } }
 ok('깔린 알약: 3 → 홑알 6 · 모두 받침 위 · 시작하자마자 지워지지 않는다');
-// 3) 던지기 14프레임 뒤 조작 · 병목 (3,0) 가로
+// 3) 던지기 14프레임 뒤 조작 · 약병 입구 (3,0) 가로
 let S=E.newGame({speed:1,stage:1,seed:7}); assert.strictEqual(S.phase,'throw'); assert.deepStrictEqual([S.piece.x,S.piece.y,S.piece.rot],[3,0,0]);
 run(S,K({left:true}),E.THROW-1); assert.strictEqual(S.piece.x,3); E.step(S,K({left:true})); assert.strictEqual(S.phase,'fall'); assert.strictEqual(S.piece.x,3);
 E.step(S,K({left:true})); assert.strictEqual(S.piece.x,2); ok('던지기: 14프레임 동안 조작 없음 · 그 뒤 ←로 한 칸');
@@ -81,12 +81,12 @@ until(S,s=>s.status==='clear'); assert.strictEqual(S.viruses,0); ok('점수: 보
 S=E.newGame({speed:1,stage:1,seed:7}); S.status='clear'; E.nextStage(S); assert.strictEqual(S.stage,2); assert.strictEqual(S.viruses,8); assert.strictEqual(S.stagesDone,1); assert.strictEqual(S.status,'play'); assert.strictEqual(S.phase,'throw');
 S=E.newGame({speed:1,stage:20,seed:7}); settle(S); clearBoard(S); put(S,0,GH-1,virus(1)); S.viruses=1; for(let x=1;x<3;x++) put(S,x,GH-1,pill(1)); forcePiece(S,[1,2]); S.piece.x=3; S.piece.rot=1;
 until(S,s=>s.status!=='play'); assert.strictEqual(S.status,'win'); assert.ok(S.events.some(e=>e.t==='win')&&S.events.some(e=>e.t==='clear')); ok('단계: 다음 단계는 바이러스 +4 · 단계 20을 마치면 win');
-// 11) 병목이 막히면 끝 · 병목 위에 걸쳐 굳어도 끝
-S=E.newGame({speed:1,stage:1,seed:7}); settle(S); clearBoard(S); put(S,7,GH-1,virus(1)); S.viruses=1; put(S,3,0,pill(1)); /* 병목 자리 막힘 */
+// 11) 약병 입구이 막히면 끝 · 약병 입구 위에 걸쳐 굳어도 끝
+S=E.newGame({speed:1,stage:1,seed:7}); settle(S); clearBoard(S); put(S,7,GH-1,virus(1)); S.viruses=1; put(S,3,0,pill(1)); /* 약병 입구 자리 막힘 */
 S.piece={x:0,y:0,rot:0,c:[2,2],shape:0}; S.phase='fall'; S.dropT=0; put(S,0,1,pill(3)); put(S,1,1,pill(3)); /* 바로 아래가 막혀 굳는다 → 다음 던지기 (3,0) 막힘 → over */
 until(S,s=>s.status!=='play'); assert.strictEqual(S.status,'over'); assert.ok(S.events.some(e=>e.t==='over'));
-S=E.newGame({speed:1,stage:1,seed:7}); settle(S); clearBoard(S); put(S,7,GH-1,virus(1)); S.viruses=1; for(let y=1;y<GH;y++) put(S,3,y,pill(y%2?2:3)); forcePiece(S,[2,2]); S.piece.x=3; S.piece.rot=1; /* 세로: (3,0),(3,-1) → 바로 굳고 위 칸이 병목 밖 */
-until(S,s=>s.status!=='play'); assert.strictEqual(S.status,'over'); ok('끝: 병목 막힘 · 병목 위에 걸쳐 굳음');
+S=E.newGame({speed:1,stage:1,seed:7}); settle(S); clearBoard(S); put(S,7,GH-1,virus(1)); S.viruses=1; for(let y=1;y<GH;y++) put(S,3,y,pill(y%2?2:3)); forcePiece(S,[2,2]); S.piece.x=3; S.piece.rot=1; /* 세로: (3,0),(3,-1) → 바로 굳고 위 칸이 약병 입구 밖 */
+until(S,s=>s.status!=='play'); assert.strictEqual(S.status,'over'); ok('끝: 약병 입구 막힘 · 약병 입구 위에 걸쳐 굳음');
 // 12) findMatches: 세로 넷 · 셋은 아님 · 가로세로 겹침
 S=E.newGame({speed:1,stage:1,seed:7}); clearBoard(S); for(let y=GH-4;y<GH;y++) put(S,5,y,pill(3)); assert.strictEqual(E.findMatches(S).size,4); S.cells[E.idx(5,GH-4)]=0; assert.strictEqual(E.findMatches(S).size,0);
 put(S,5,GH-4,pill(3)); for(let x=4;x<8;x++) put(S,x,GH-1,virus(3)); assert.strictEqual(E.findMatches(S).size,7); ok('맞추기: 세로 넷 · 셋은 아님 · 가로세로 겹치면 합집합');
