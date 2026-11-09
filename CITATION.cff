@@ -2,9 +2,9 @@ cff-version: 1.2.0
 message: "If you use this software, please cite it using the metadata below."
 title: "Donghyundoc (동현닥): a single-player pill-dropping puzzle laboratory in the manner of Dr. Mario, with the speed, virus level and pre-placed pills set through the esoteric language Donghyun-lang"
 type: software
-version: "0.04"
+version: "0.05"
 doi: "10.5281/zenodo.24084897"
-date-released: "2026-11-09"
+date-released: "2026-11-10"
 authors:
   - family-names: Kim
     given-names: Dong Hyun
@@ -21,7 +21,10 @@ abstract: >-
   ends the level. The doctor is Podongi, the maker's Maltese dog, using the
   first PNG image that serves as the icon of the Donghyun series; the three
   viruses are newly drawn 9x9 pixel faces, and pills come in capsule, tablet
-  and syringe shapes. The speed (slow, medium, fast), the virus level (1-20)
+  and syringe shapes. A syringe's needle turns with the rotation while its
+  colours move as a capsule's do, so needle and plunger trade colours on every
+  turn; a tablet turns the opposite way, and tablets appear more often at
+  higher levels (5% at level 1 to 43% at level 20). The speed (slow, medium, fast), the virus level (1-20)
   and the number of pre-placed pills are chosen through a program written in
   the esoteric programming language Donghyun-lang. Input is keyboard and
   gamepad only, with fullscreen; the game is saved in three browser slots and

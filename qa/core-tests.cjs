@@ -9,6 +9,7 @@ const put=(S,x,y,o)=>{ S.cells[E.idx(x,y)]=o; };
 const clearBoard=S=>{ S.cells.fill(0); S.viruses=0; };
 const countV=S=>S.cells.filter(o=>o&&o.kind==='virus').length;
 const settle=S=>{ /* 던지기 끝까지 */ run(S,K(),E.THROW); };
+const dropLock=S=>{ for(let i=0;i<600&&S.phase==='fall'&&S.status==='play';i++) E.step(S,K({down:true})); };
 const forcePiece=(S,c,shape=0)=>{ S.piece={x:3,y:0,rot:0,c,shape}; S.phase='fall'; S.dropT=0; S.dasT=0; S.dasDir=0; };
 const until=(S,pred,max=5000)=>{ for(let i=0;i<max&&!pred(S);i++) E.step(S,K()); assert.ok(pred(S),'조건에 이르지 못했다'); };
 
@@ -97,4 +98,40 @@ const a=[],b=[]; for(let i=0;i<600;i++){ E.step(S,K({left:i%7<3,down:i%5===0}));
 assert.strictEqual(JSON.stringify(S,(k,v)=>k==='events'||k==='fx'?undefined:v),JSON.stringify(copy,(k,v)=>k==='events'||k==='fx'?undefined:v)); ok('저장 직렬화 왕복 후 같은 진행');
 // 14) 같은 씨앗이면 같은 판
 assert.strictEqual(JSON.stringify(E.newGame({speed:1,stage:7,pre:2,seed:5}).cells),JSON.stringify(E.newGame({speed:1,stage:7,pre:2,seed:5}).cells)); ok('같은 씨앗 → 같은 판');
+// 15) 태블릿은 거꾸로 돈다: X·↑(+1)가 반시계, Z(−1)가 시계. 캡슐·주사기는 그대로. 벽 차기도 같다
+for(const sh of [0,2]){ S=E.newGame({speed:1,stage:1,seed:7}); settle(S); forcePiece(S,[1,2],sh); S.piece.y=5; E.rotate(S,1); assert.strictEqual(S.piece.rot,1,'모양 '+sh+' 시계'); }
+S=E.newGame({speed:1,stage:1,seed:7}); settle(S); forcePiece(S,[1,2],1); S.piece.y=5;
+assert.ok(E.rotate(S,1)); assert.strictEqual(S.piece.rot,3,'태블릿 +1 → 반시계'); assert.deepStrictEqual(E.cellsOf(S.piece).map(q=>[q.x,q.y,q.c]),[[3,5,2],[3,4,1]]);
+assert.ok(E.rotate(S,1)); assert.strictEqual(S.piece.rot,2); assert.ok(E.rotate(S,-1)); assert.strictEqual(S.piece.rot,3); assert.ok(E.rotate(S,-1)); assert.strictEqual(S.piece.rot,0,'태블릿 −1 → 시계');
+S.piece.rot=1; S.piece.x=GW-1; assert.ok(E.rotate(S,-1)); assert.strictEqual(S.piece.rot,2); assert.strictEqual(S.piece.x,GW-2,'태블릿도 오른쪽 벽에서 한 칸 밀려 돈다');
+{ const T=E.newGame({speed:1,stage:1,seed:7}); settle(T); forcePiece(T,[1,2],1); T.piece.y=5; E.rotate(T,1); const U=E.newGame({speed:1,stage:1,seed:7}); settle(U); forcePiece(U,[1,2],0); U.piece.y=5; E.rotate(U,-1); assert.deepStrictEqual(E.cellsOf(T.piece),E.cellsOf(U.piece),'태블릿 X = 캡슐 Z'); }
+ok('태블릿: X·↑ 반시계 · Z 시계 · 벽 차기 · 캡슐·주사기는 그대로');
+// 16) 주사기: 바늘은 돌리는 방향대로 오른쪽→아래→왼쪽→위, 색은 캡슐과 같아 돌릴 때마다 바늘 쪽 색이 맞바뀐다. 굳으면 바늘 칸을 기억한다
+S=E.newGame({speed:1,stage:1,seed:7}); settle(S); forcePiece(S,[1,2],2); S.piece.y=5;
+const needle=()=>{ const cs=E.cellsOf(S.piece), ni=E.needleIdx(S.piece.rot), a=cs[ni], b=cs[1-ni]; return {c:a.c,dir:[Math.sign(a.x-b.x),Math.sign(a.y-b.y)].join(',')}; };
+const seen=[needle()]; for(let i=0;i<4;i++){ E.rotate(S,1); seen.push(needle()); }
+assert.deepStrictEqual(seen.map(q=>q.dir),['1,0','0,1','-1,0','0,-1','1,0'],'바늘 방향 시계');
+for(let i=1;i<seen.length;i++) assert.notStrictEqual(seen[i].c,seen[i-1].c,'돌릴 때마다 바늘 색이 바뀐다 '+i);
+const back=[needle()]; for(let i=0;i<4;i++){ E.rotate(S,-1); back.push(needle()); } assert.deepStrictEqual(back.map(q=>q.dir),['1,0','0,-1','-1,0','0,1','1,0'],'반시계'); for(let i=1;i<back.length;i++) assert.notStrictEqual(back[i].c,back[i-1].c);
+{ const T=E.newGame({speed:1,stage:1,seed:7}); settle(T); forcePiece(T,[1,2],2); T.piece.y=5; E.rotate(T,1); E.rotate(T,1); const U=E.newGame({speed:1,stage:1,seed:7}); settle(U); forcePiece(U,[1,2],0); U.piece.y=5; E.rotate(U,1); E.rotate(U,1); assert.deepStrictEqual(E.cellsOf(T.piece),E.cellsOf(U.piece),'주사기 색 자리 = 캡슐'); }
+for(const rot of [0,1,2,3]){ const T=E.newGame({speed:1,stage:1,seed:7}); settle(T); T.cells.fill(0); T.viruses=0; T.cells[E.idx(0,15)]={c:3,kind:'virus',shape:0,lx:0,ly:0,seed:0}; T.viruses=1; forcePiece(T,[1,2],2); for(let i=0;i<rot;i++) E.rotate(T,1); dropLock(T);
+  const pills=T.cells.map((o,i)=>o&&o.kind==='pill'?{...o,i}:null).filter(Boolean); assert.strictEqual(pills.length,2); assert.strictEqual(pills.filter(o=>o.n===true).length,1,'바늘 칸 하나 rot '+rot); const nd=pills.find(o=>o.n);
+  const want=[2,1,2,1][rot]; assert.strictEqual(nd.c,want,'굳은 바늘 색 rot '+rot); }
+{ const T=E.newGame({speed:1,stage:1,seed:7}); settle(T); T.cells.fill(0); T.cells[E.idx(0,15)]={c:3,kind:'virus',shape:0,lx:0,ly:0,seed:0}; T.viruses=1; forcePiece(T,[1,2],0); dropLock(T); assert.ok(T.cells.every(o=>!o||o.n===undefined),'캡슐은 바늘 표시 없음'); }
+ok('주사기: 바늘 오른쪽→아래→왼쪽→위 · 돌릴 때마다 바늘·밀대 색 맞바뀜 · 색 자리는 캡슐과 같음 · 굳으면 바늘 칸 기억');
+// 17) 나오는 비율: 주사기 1/3 · 태블릿 단계 1 5% → 단계 20 43% · 나머지 캡슐
+assert.strictEqual(E.tabletRate(1),0.05); assert.ok(Math.abs(E.tabletRate(20)-0.43)<1e-9); for(let st=2;st<=20;st++) assert.ok(E.tabletRate(st)>E.tabletRate(st-1));
+for(const [st,tr] of [[1,0.05],[10,0.23],[20,0.43]]){ const T={rs:12345,stage:st}; const cnt=[0,0,0]; const N=30000; for(let i=0;i<N;i++) cnt[E.pickShape(T)]++;
+  assert.ok(Math.abs(cnt[2]/N-1/3)<0.015,'주사기 '+st+' '+cnt[2]/N); assert.ok(Math.abs(cnt[1]/N-tr)<0.015,'태블릿 '+st+' '+cnt[1]/N); assert.ok(Math.abs(cnt[0]/N-(2/3-tr))<0.015,'캡슐 '+st); }
+{ let t1=0,t20=0; for(let seed=1;seed<=200;seed++){ const A=E.newGame({speed:1,stage:1,seed}); const B=E.newGame({speed:1,stage:20,seed}); if(A.piece.shape===1) t1++; if(B.piece.shape===1) t20++; } assert.ok(t20>t1*3,'단계 20에서 태블릿이 훨씬 잦다 '+t1+'/'+t20); }
+ok('비율: 주사기 1/3 · 태블릿 5%→43%(단계마다 +2%) · 판에서도 단계 20이 더 잦다');
+// 18) 안내: 태블릿·주사기가 처음 던져질 때 한 번만 알린다(단계가 바뀌어도 다시 알리지 않는다)
+{ let found=null; for(let seed=1;seed<400&&!found;seed++){ const T=E.newGame({speed:1,stage:20,seed}); if(T.piece.shape===1) found=T; }
+  assert.ok(found,'단계 20에서 첫 알약이 태블릿인 판'); assert.strictEqual(found.msg,E.TOLD[1]); assert.strictEqual(found.msgT,240); assert.ok(found.events.some(e=>e.t==='gimmick'&&e.shape===1)); assert.ok(found.told[1]);
+  const T=found; settle(T); T.cells.fill(0); T.cells[E.idx(0,15)]=virus(3); T.viruses=1; T.next={c:[1,1],shape:1}; T.msg=''; T.msgT=0; T.events.length=0;
+  dropLock(T); assert.strictEqual(T.piece.shape,1,'두 번째 태블릿'); assert.ok(!T.events.some(e=>e.t==='gimmick'),'두 번째 태블릿은 알리지 않는다'); assert.strictEqual(T.msg,'');
+  T.next={c:[2,2],shape:2}; settle(T); dropLock(T); assert.strictEqual(T.piece.shape,2); assert.strictEqual(T.msg,E.TOLD[2],'주사기는 처음이라 알린다'); assert.strictEqual(T.events.filter(e=>e.t==='gimmick').length,1);
+  /* 다음 단계로 넘어가도 기억(같은 판) — 저장 뒤 불러오기에도 told가 남는다 */ const J=JSON.parse(JSON.stringify(T)); assert.ok(J.told[1]&&J.told[2]); }
+{ const T=E.newGame({speed:1,stage:1,seed:3}); assert.ok(!T.told[0],'캡슐은 알리지 않는다'); }
+ok('안내: 처음 한 번 · 화면 아래 글과 기록 · 캡슐은 없음');
 console.log(`핵심 시험 ${n}개 통과`);

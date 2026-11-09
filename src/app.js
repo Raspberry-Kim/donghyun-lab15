@@ -137,6 +137,7 @@ function events(){
   for(const ev of S.events){
     if(ev.t==='match'){ once(ev.viruses?'sparkle':'pop'); if(ev.viruses) log(`바이러스 ${ev.viruses} 지움${ev.chain>1?` (연쇄 ${ev.chain})`:''}. +${ev.gained.toLocaleString('ko-KR')}점. 남은 바이러스 ${S.viruses-ev.viruses}.`); else if(ev.chain>1) log(`알약 ${ev.pills}칸 연쇄로 지움.`); }
     else if(ev.t==='stage'){ if(S.time>0) once('zone'); }
+    else if(ev.t==='gimmick'){ log(ev.shape===1?'태블릿이 나왔다. 태블릿은 거꾸로 돈다: X·↑가 반시계, Z가 시계 방향이다.':'주사기가 나왔다. 돌릴 때마다 바늘이 따라 돌고, 바늘 쪽과 밀대 쪽 색이 맞바뀐다.'); }
     else if(SNDMAP[ev.t]) once(SNDMAP[ev.t]);
     if(ev.t==='clear') stageClear(ev);
     if(ev.t==='win') finish(true,ev);
@@ -209,7 +210,7 @@ function snapshot(){
   const logs=[...$('#log').children].reverse().map(li=>li.textContent);
   return {format:SAVE_FORMAT,version:SAVE_VERSION,savedAt:new Date().toISOString(),summary:{stage:S.stage,speed:E.speedOf(S).name,viruses:S.viruses,score:S.score},state,logs};
 }
-const isCell=o=>o===0||(o&&typeof o==='object'&&Number.isInteger(o.c)&&o.c>=1&&o.c<=E.COLORS&&(o.kind==='virus'||o.kind==='pill')&&Number.isInteger(o.shape)&&o.shape>=0&&o.shape<=2&&[-1,0,1].includes(o.lx)&&[-1,0,1].includes(o.ly));
+const isCell=o=>o===0||(o&&typeof o==='object'&&Number.isInteger(o.c)&&o.c>=1&&o.c<=E.COLORS&&(o.kind==='virus'||o.kind==='pill')&&Number.isInteger(o.shape)&&o.shape>=0&&o.shape<=2&&[-1,0,1].includes(o.lx)&&[-1,0,1].includes(o.ly)&&(o.n===undefined||typeof o.n==='boolean'));
 function restore(data){
   if(!data||data.format!==SAVE_FORMAT) throw new Error('동현닥 저장 파일이 아니다.');
   if(data.version!==SAVE_VERSION) throw new Error('지원하지 않는 저장 형식 버전이다('+data.version+').');
@@ -278,7 +279,7 @@ document.addEventListener('keydown',e=>{
   const k=keyOf(e); if(!k) return; e.preventDefault(); if(e.repeat) return; keyDown(k);
 });
 document.addEventListener('keyup',e=>{ const k=keyOf(e); if(!k) return; keyUp(k); });
-GP.start({hint:'A·↑ 시계 · B 반시계 돌리기 · Y 설명 · + 메뉴',status:t=>status(t),
+GP.start({hint:'A·↑ 시계 · B 반시계 돌리기(태블릿은 거꾸로) · Y 설명 · + 메뉴',status:t=>status(t),
   down(k){ if(!S||tab!=='play') return; keyDown(k); }, up(k){ if(!S) return; keyUp(k); }});
 function keyDown(k){
   if(!S) return;
@@ -286,7 +287,7 @@ function keyDown(k){
   if(mode==='clear'){ if(k==='x'||k==='enter') nextLevel(); return; }
   if(menu){ if(k==='up'||k==='down'){ const n=menu.items.length; menu.i=(menu.i+(k==='up'?-1:1)+n)%n; drawMenu(); } else if(k==='x'||k==='enter'){ pick(); } else if(k==='z'){ cancelMenu(); } return; }
   if(/^(left|right|down)$/.test(k)){ if(!keys[k]) fresh[k]=1; keys[k]=true; }
-  else if(k==='x'||k==='up'){ E.rotate(S,1); } /* ↑는 X와 같은 시계 방향 돌리기(v0.03) */
+  else if(k==='x'||k==='up'){ E.rotate(S,1); } /* ↑는 X와 같은 시계 방향 돌리기(v0.03) · 태블릿은 엔진에서 거꾸로(v0.05) */
   else if(k==='z'){ E.rotate(S,-1); }
   else if(k==='a'){ const m=E.speedOf(S); S.msg=`${m.name}: ${m.desc}`; S.msgT=200; }
   else if(k==='enter') mainMenu();

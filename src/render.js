@@ -40,9 +40,10 @@ function drawDoctor(g,S,T){
   g.save(); g.translate(DX+DW/2,y0+DH); g.rotate(a*0.12); g.translate(-DX-DW/2,-y0-DH); hindLeg(g,DX+22,y0+DH-20,a); g.translate(DX+DW,0); g.scale(-1,1); g.drawImage(D,0,y0,DW,DH); g.restore(); }
 
 /* ---------- 알약 한 칸 ---------- */
-/* lx,ly: 짝의 상대 위치(0,0이면 홑알). shape 0 캡슐 · 1 태블릿 · 2 주사기 */
-function drawCell(g,px,py,c,shape,lx,ly){
-  const k=col(c), s=CELL, m=2, linked=lx||ly;
+/* lx,ly: 짝의 상대 위치(0,0이면 홑알). shape 0 캡슐 · 1 태블릿 · 2 주사기. nd: 주사기에서 바늘이 있는 칸이면 true(없으면 옛 규칙: 짝이 왼쪽·위인 칸) */
+const ang=(lx,ly)=>Math.atan2(ly,lx); /* 짝 쪽을 가리키는 각 */
+function drawCell(g,px,py,c,shape,lx,ly,nd){
+  const k=col(c), s=CELL, m=2, linked=lx||ly, cx=px+s/2, cy=py+s/2;
   g.lineWidth=1; g.strokeStyle='rgba(58,48,66,.75)';
   if(shape===0){ /* 캡슐: 짝 쪽은 평평, 바깥쪽은 둥글다. 홑알은 둥근 점 */
     if(!linked){ g.fillStyle=k.b; g.beginPath(); g.arc(px+s/2,py+s/2,6.5,0,Math.PI*2); g.fill(); g.stroke(); g.fillStyle='rgba(255,255,255,.55)'; g.beginPath(); g.arc(px+s/2-2,py+s/2-2,2,0,Math.PI*2); g.fill(); return; }
@@ -52,26 +53,36 @@ function drawCell(g,px,py,c,shape,lx,ly){
     g.fillStyle=k.b; rr(g,x,y,w,h,rad); g.fill(); g.stroke();
     g.fillStyle='rgba(255,255,255,.5)'; rr(g,x+3,y+3,w-6,3,1.5); g.fill();
     return; }
-  if(shape===1){ /* 태블릿: 납작한 모서리 둥근 네모, 가운데 홈 */
-    const x=px+m, y=py+m, w=s-2*m, h=s-2*m;
-    g.fillStyle=k.b; rr(g,x,y,w,h,4); g.fill(); g.stroke();
-    g.strokeStyle='rgba(58,48,66,.45)'; g.beginPath(); if(ly){ g.moveTo(x+3,y+h/2); g.lineTo(x+w-3,y+h/2); } else { g.moveTo(x+w/2,y+3); g.lineTo(x+w/2,y+h-3); } g.stroke();
-    g.fillStyle='rgba(255,255,255,.45)'; rr(g,x+2,y+2,w-4,3,1.5); g.fill();
-    if(linked){ g.fillStyle='rgba(58,48,66,.25)'; if(lx>0) g.fillRect(px+s-2,py+5,2,s-10); if(lx<0) g.fillRect(px,py+5,2,s-10); if(ly>0) g.fillRect(px+5,py+s-2,s-10,2); if(ly<0) g.fillRect(px+5,py,s-10,2); }
+  if(shape===1){ /* 태블릿: 가운데 절취선(두 칸의 경계)을 사이에 두고 양쪽이 볼록볼록한 하나의 둥근 알. 경계에서는 살짝 잘록하지만 이어져 있다 */
+    if(!linked){ g.fillStyle=k.b; g.beginPath(); g.arc(cx,cy,7.5,0,Math.PI*2); g.fill(); g.stroke();
+      g.strokeStyle='rgba(58,48,66,.45)'; g.beginPath(); g.moveTo(cx-4.5,cy); g.lineTo(cx+4.5,cy); g.stroke();
+      g.fillStyle='rgba(255,255,255,.5)'; g.beginPath(); g.ellipse(cx-2.5,cy-3.5,2.6,1.4,-0.5,0,Math.PI*2); g.fill(); return; }
+    g.save(); g.translate(cx,cy); g.rotate(ang(lx,ly)); /* 짝이 오른쪽(+x)에 오도록 돌려 그린다 */
+    g.beginPath(); g.moveTo(10,-6.2);
+    g.bezierCurveTo(7.6,-6.2,6.6,-8.8,1.2,-8.8); g.bezierCurveTo(-5.4,-8.8,-9.4,-5.2,-9.4,0);
+    g.bezierCurveTo(-9.4,5.2,-5.4,8.8,1.2,8.8); g.bezierCurveTo(6.6,8.8,7.6,6.2,10,6.2);
+    g.fillStyle=k.b; g.fill(); g.stroke(); /* 열린 윤곽: 짝과 맞닿는 x=10 쪽은 선을 긋지 않는다 */
+    g.strokeStyle='rgba(58,48,66,.62)'; g.lineWidth=1.4; g.beginPath(); g.moveTo(10,-5); g.lineTo(10,5); g.stroke(); /* 절취선(짝의 반쪽과 합쳐 하나) */
+    g.restore();
+    g.fillStyle='rgba(255,255,255,.5)'; g.beginPath(); g.ellipse(cx-2+lx*1.5,cy-4.2+ly*1.5,3,1.5,-0.35,0,Math.PI*2); g.fill();
     return; }
-  /* 주사기: 짝이 왼쪽·위에 있는 칸이 통(눈금 창, 끝에 바늘), 짝이 오른쪽·아래에 있는 칸이 밀대. 홑알은 작은 앰풀 */
-  if(!linked){ g.fillStyle=k.b; rr(g,px+5,py+7,10,11,[2,2,3,3]); g.fill(); g.stroke(); g.fillStyle=k.d; g.fillRect(px+8,py+3,4,4); g.fillStyle='rgba(255,255,255,.55)'; g.fillRect(px+7,py+9,2,6); return; }
-  const barrel=lx<0||ly<0, horiz=!!lx;
-  g.save(); g.translate(px+s/2,py+s/2); if(!horiz) g.rotate(Math.PI/2); /* 가로 기준으로 그린 뒤 세로면 90° 돌린다: 통은 아래쪽(바늘이 아래) */
-  if(barrel){ /* 통: 왼쪽이 짝(밀대) 쪽, 오른쪽 끝에 바늘 */
-    g.fillStyle=k.b; rr(g,-10,-6,14,12,[0,3,3,0]); g.fill(); g.stroke();
-    g.fillStyle='rgba(255,255,255,.7)'; g.fillRect(-7,-3,8,6); g.fillStyle=k.d; g.fillRect(-7,-3,3,6);
-    g.strokeStyle='rgba(58,48,66,.5)'; g.beginPath(); for(let i=-5;i<=-1;i+=2){ g.moveTo(i,-3); g.lineTo(i,-1); } g.stroke();
-    g.fillStyle=k.d; g.fillRect(4,-2,2,4); g.strokeStyle=C.ink; g.lineWidth=1.2; g.beginPath(); g.moveTo(6,0); g.lineTo(10,0); g.stroke();
-  } else { /* 밀대: 오른쪽이 짝(통) 쪽, 왼쪽 끝에 손잡이 날개 */
-    g.fillStyle=k.b; rr(g,-4,-4,14,8,[2,0,0,2]); g.fill(); g.stroke();
-    g.fillStyle=k.b; rr(g,-10,-7,5,14,2); g.fill(); g.stroke();
-    g.fillStyle='rgba(255,255,255,.5)'; g.fillRect(-2,-2,10,2);
+  /* 주사기: 바늘 칸은 통(눈금 창, 끝에 바늘), 다른 칸은 통의 뒤쪽과 밀대(손가락 날개·누르개). 바늘은 짝의 반대쪽을 가리킨다. 홑알은 작은 앰풀 */
+  if(!linked){ g.fillStyle=k.b; rr(g,px+4,py+6,12,13,[3,3,4,4]); g.fill(); g.stroke(); g.fillStyle=k.d; g.fillRect(px+7.5,py+2,5,4); g.fillStyle='rgba(255,255,255,.55)'; g.fillRect(px+6.5,py+8.5,2.5,8); return; }
+  const barrel=nd===undefined?(lx<0||ly<0):!!nd;
+  g.save(); g.translate(cx,cy);
+  if(barrel){ g.rotate(ang(lx,ly)+Math.PI); /* 짝이 왼쪽(−x), 바늘이 오른쪽(+x) */
+    g.fillStyle=k.b; rr(g,-10,-7.5,14.5,15,[0,3.5,3.5,0]); g.fill(); g.stroke();
+    g.fillStyle='rgba(255,255,255,.72)'; g.fillRect(-8,-3.5,10,7); g.fillStyle=k.d; g.fillRect(-8,-3.5,4,7);
+    g.strokeStyle='rgba(58,48,66,.5)'; g.beginPath(); for(let i=-3;i<=1;i+=2){ g.moveTo(i,-3.5); g.lineTo(i,-1); } g.stroke();
+    g.fillStyle=k.d; g.strokeStyle='rgba(58,48,66,.75)'; rr(g,4.5,-2.8,2.5,5.6,1); g.fill(); g.stroke();
+    g.strokeStyle=C.ink; g.lineWidth=1.4; g.beginPath(); g.moveTo(7,0); g.lineTo(10.5,0); g.stroke();
+  } else { g.rotate(ang(lx,ly)); /* 짝이 오른쪽(+x), 밀대가 왼쪽(−x) */
+    g.fillStyle=k.d; rr(g,-10,-5.5,2.5,11,1); g.fill(); g.stroke();      /* 누르개 */
+    g.fillStyle=k.d; g.fillRect(-7.5,-2,3,4);                            /* 밀대 막대 */
+    g.fillStyle=k.b; rr(g,-5.5,-9,3,18,1.5); g.fill(); g.stroke();       /* 손가락 날개 */
+    g.fillStyle=k.b; rr(g,-2.5,-7.5,12.5,15,0); g.fill(); g.stroke();    /* 통의 뒤쪽 */
+    g.fillStyle='rgba(58,48,66,.35)'; g.fillRect(4.5,-7,2,14);           /* 고무 마개 */
+    g.fillStyle='rgba(255,255,255,.5)'; g.fillRect(-1,-5.5,5,2);
   }
   g.restore();
 }
@@ -109,7 +120,7 @@ function render(g,S,T){
   /* 칸 */
   const frame=Math.floor(T/24)%2, marks=new Set(S.marks);
   for(let y=0;y<GH;y++) for(let x=0;x<GW;x++){ const o=S.cells[E.idx(x,y)]; if(!o) continue; const px=BX+x*CELL, py=BY+y*CELL;
-    if(o.kind==='virus') drawVirus(g,px,py,o.c,(frame+(o.seed||0))%2); else drawCell(g,px,py,o.c,o.shape,o.lx,o.ly);
+    if(o.kind==='virus') drawVirus(g,px,py,o.c,(frame+(o.seed||0))%2); else drawCell(g,px,py,o.c,o.shape,o.lx,o.ly,o.n);
     if(marks.has(E.idx(x,y))){ const a=0.35+0.45*Math.abs(Math.sin(T*0.6)); g.fillStyle=`rgba(255,255,255,${a})`; g.fillRect(px+1,py+1,CELL-2,CELL-2); } }
   /* 오른쪽: 닥터 포동이(알약보다 먼저 그려 던지는 알약이 위에 보인다) */
   drawDoctor(g,S,T);
@@ -119,14 +130,15 @@ function render(g,S,T){
     if(S.phase==='throw'){ const u=S.pt/E.THROW, G=gimmick(S), o=G.origin(S.pt); const x1=BX+3*CELL, y1=BY;
       /* 준비 동작 동안은 알약이 포동이의 꼬리·머리·발에 붙어 있고, 때리는 순간부터 포물선으로 약병 입구까지 날아간다 */
       let x=o.x, y=o.y; if(u>G.hit){ const v=(u-G.hit)/(1-G.hit), e=1-(1-v)*(1-v); x=o.x+(x1-o.x)*e; y=o.y+(y1-o.y)*e-Math.sin(v*Math.PI)*36; }
-      drawCell(g,x,y,p.c[0],p.shape,1,0); drawCell(g,x+CELL,y,p.c[1],p.shape,-1,0); }
-    else { g.save(); g.beginPath(); g.rect(BX,BY-20,GW*CELL,GH*CELL+20); g.clip(); const [a,b]=cs; drawCell(g,BX+a.x*CELL,BY+a.y*CELL,a.c,p.shape,b.x-a.x,b.y-a.y); drawCell(g,BX+b.x*CELL,BY+b.y*CELL,b.c,p.shape,a.x-b.x,a.y-b.y); g.restore(); }
+      drawCell(g,x,y,p.c[0],p.shape,1,0,false); drawCell(g,x+CELL,y,p.c[1],p.shape,-1,0,true); }
+    else { g.save(); g.beginPath(); g.rect(BX,BY-20,GW*CELL,GH*CELL+20); g.clip(); const [a,b]=cs, ni=E.needleIdx(p.rot); drawCell(g,BX+a.x*CELL,BY+a.y*CELL,a.c,p.shape,b.x-a.x,b.y-a.y,ni===0); drawCell(g,BX+b.x*CELL,BY+b.y*CELL,b.c,p.shape,a.x-b.x,a.y-b.y,ni===1); g.restore(); }
   }
   /* 지움 효과 */
   for(const f of S.fx){ if(f.kind!=='virus') continue; const u=1-f.t/E.CLEAR_T, px=BX+f.x*CELL+CELL/2, py=BY+f.y*CELL+CELL/2; g.strokeStyle=col(f.c).b; g.globalAlpha=1-u; g.lineWidth=2; g.beginPath(); g.arc(px,py,6+u*16,0,Math.PI*2); g.stroke(); g.globalAlpha=1; }
   /* 오른쪽: 다음 알약 · 바이러스 수 */
   g.fillStyle=C.sub; g.font=`600 10px ${FONT}`; g.textAlign='left'; g.fillText('다음',364,178); /* 라벨과 알약 사이를 띄운다(주사기는 칸 밖으로 삐져나온다) */
-  if(S.next){ const nx=414,ny=168; const show=S.status==='play'&&S.phase!=='throw'||S.status!=='play'; if(show){ drawCell(g,nx,ny-8+14,S.next.c[0],S.next.shape,1,0); drawCell(g,nx+CELL,ny-8+14,S.next.c[1],S.next.shape,-1,0); } }
+  if(S.next){ const nx=414,ny=168; const show=S.status==='play'&&S.phase!=='throw'||S.status!=='play'; if(show){ drawCell(g,nx,ny-8+14,S.next.c[0],S.next.shape,1,0,false); drawCell(g,nx+CELL,ny-8+14,S.next.c[1],S.next.shape,-1,0,true);
+    if(S.next.shape===1){ g.fillStyle=C.sub; g.font=`700 11px ${FONT}`; g.textAlign='center'; g.fillText('↺ 거꾸로',nx+CELL,ny+30); g.textAlign='left'; } } }
   const counts={1:0,2:0,3:0}; for(const o of S.cells) if(o&&o.kind==='virus') counts[o.c]++;
   g.fillStyle=C.panel; rr(g,330,218,138,124,10); g.fill(); g.strokeStyle=C.line; g.stroke();
   g.fillStyle=C.sub; g.font=`600 10px ${FONT}`; g.fillText('바이러스',342,226);

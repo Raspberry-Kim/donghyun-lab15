@@ -49,10 +49,17 @@ function placePre(S){
   while(gravityStep(S)){}
   if(findMatches(S).size) { /* 드물게 떨어지며 넷이 맞으면 색을 다시 섞는다 */ for(const i of findMatches(S)){ const o=S.cells[i]; if(o.kind==='pill'){ o.c=o.c%COLORS+1; } } }
 }
-function newPiece(S){ return {c:[ri(S,1,COLORS),ri(S,1,COLORS)],shape:ri(S,0,2)}; }
+/* 모양: 주사기는 늘 1/3. 태블릿은 단계 1에서 5%로 시작해 단계마다 2%씩 늘어 단계 20에서 43%. 나머지가 캡슐 */
+function tabletRate(stage){ return 0.05+0.02*(Math.max(1,Math.min(STAGES,stage))-1); }
+function pickShape(S){ const r=rng(S); return r<1/3?2:r<1/3+tabletRate(S.stage)?1:0; }
+function newPiece(S){ return {c:[ri(S,1,COLORS),ri(S,1,COLORS)],shape:pickShape(S)}; }
+/* 주사기 바늘 칸: 바늘은 돌리는 방향대로 오른쪽→아래→왼쪽→위를 가리키지만 색은 캡슐처럼 움직여서, 돌릴 때마다 바늘 쪽과 밀대 쪽 색이 맞바뀐다.
+   cellsOf의 [A,B] 가운데 바늘이 있는 칸: rot 0·3은 B, rot 1·2는 A */
+function needleIdx(rot){ return rot===0||rot===3?1:0; }
+const TOLD={1:'태블릿은 거꾸로 돈다 · X·↑ 반시계 · Z 시계',2:'주사기는 돌릴 때마다 바늘·밀대 색이 맞바뀐다'};
 function newGame({speed=1,stage=1,pre=0,seed=1}={}){
   const S={rs:(seed>>>0)||1,speedI:speed-1,stage,pre,score:0,time:0,status:'play',phase:'throw',pt:0,pieces:0,stagesDone:0,chain:0,comboV:0,
-    cells:new Array(GW*GH).fill(0),viruses:0,piece:null,next:null,dropT:0,dasT:0,dasDir:0,marks:[],fx:[],events:[],msg:'',msgT:0,lastClear:null};
+    cells:new Array(GW*GH).fill(0),viruses:0,told:{},piece:null,next:null,dropT:0,dasT:0,dasDir:0,marks:[],fx:[],events:[],msg:'',msgT:0,lastClear:null};
   placeViruses(S); if(pre>0) placePre(S);
   S.next=newPiece(S); throwNext(S);
   S.events.push({t:'stage',stage});
@@ -75,11 +82,13 @@ function throwNext(S){
   const p={x:3,y:0,rot:0,c:S.next.c,shape:S.next.shape}; S.piece=p; S.next=newPiece(S); S.comboV=0; S.chain=0;
   if(!fits(S,p)){ S.status='over'; S.phase='fall'; S.events.push({t:'over'}); return; }
   S.phase='throw'; S.pt=0; S.events.push({t:'throw'});
+  if(!S.told) S.told={};
+  if(TOLD[p.shape]&&!S.told[p.shape]){ S.told[p.shape]=true; S.msg=TOLD[p.shape]; S.msgT=240; S.events.push({t:'gimmick',shape:p.shape,text:TOLD[p.shape]}); }
 }
 function tryMove(S,dx,dy){ const p=S.piece, q={...p,x:p.x+dx,y:p.y+dy}; if(fits(S,q)){ p.x=q.x; p.y=q.y; return true; } return false; }
-function rotate(S,dir){ /* dir +1 시계 방향, -1 반시계. 벽에 막히면 왼쪽으로 한 칸 밀어 본다(원작의 벽 차기) */
+function rotate(S,dir){ /* dir +1 시계 방향(X·↑), -1 반시계(Z). 태블릿은 거꾸로 돈다(+1이 반시계). 벽에 막히면 왼쪽으로 한 칸 밀어 본다(원작의 벽 차기) */
   if(S.status!=='play'||S.phase!=='fall'||!S.piece) return false;
-  const p=S.piece, q={...p,rot:(p.rot+dir+4)%4};
+  const p=S.piece; if(p.shape===1) dir=-dir; const q={...p,rot:(p.rot+dir+4)%4};
   for(const kick of [[0,0],[-1,0],[0,1]]){ const r={...q,x:q.x+kick[0],y:q.y+kick[1]}; if(fits(S,r)){ p.rot=r.rot; p.x=r.x; p.y=r.y; S.events.push({t:'rotate'}); return true; } }
   return false;
 }
@@ -87,9 +96,10 @@ function framesPerDrop(S){ return Math.max(6,SPEEDS[S.speedI].frames-Math.floor(
 function lock(S){
   const p=S.piece, cs=cellsOf(p), h=p.rot%2===0;
   if(cs.some(q=>q.y<0)){ S.status='over'; S.piece=null; S.events.push({t:'over'}); return; }
-  const [a,b]=cs;
+  const [a,b]=cs, ni=needleIdx(p.rot);
   S.cells[idx(a.x,a.y)]={c:a.c,kind:'pill',shape:p.shape,lx:b.x-a.x,ly:b.y-a.y};
   S.cells[idx(b.x,b.y)]={c:b.c,kind:'pill',shape:p.shape,lx:a.x-b.x,ly:a.y-b.y};
+  if(p.shape===2){ S.cells[idx(a.x,a.y)].n=ni===0; S.cells[idx(b.x,b.y)].n=ni===1; }
   S.piece=null; S.pieces++; S.events.push({t:'lock'});
   afterSettle(S);
 }
@@ -155,5 +165,5 @@ function step(S,keys){
   if(S.phase==='drop'){ S.pt++; if(S.pt>=DROP_T){ S.pt=0; if(!gravityStep(S)){ S.phase='fall'; afterSettle(S); } } return; }
 }
 const speedOf=S=>SPEEDS[S.speedI];
-root.Engine={GW,GH,CELL,BX,BY,W,H,SPEEDS,STAGES,COLORS,SHAPES,THROW,CLEAR_T,STAGE_BONUS,newGame,step,rotate,nextStage,cellsOf,findMatches,gravityStep,virusCount,virusRows,framesPerDrop,speedOf,at,idx};
+root.Engine={GW,GH,CELL,BX,BY,W,H,SPEEDS,STAGES,COLORS,SHAPES,THROW,CLEAR_T,STAGE_BONUS,newGame,step,rotate,nextStage,cellsOf,needleIdx,tabletRate,pickShape,TOLD,findMatches,gravityStep,virusCount,virusRows,framesPerDrop,speedOf,at,idx};
 })(typeof window!=='undefined'?window:(typeof module!=='undefined'?module.exports:this));
