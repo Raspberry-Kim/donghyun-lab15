@@ -367,3 +367,6 @@ html{touch-action:manipulation}.stage-full,.board-stage,.touchpad,.dpad,.pad-key
 .maker-note a.sponsor-btn:hover{background:var(--surface2)}
 .maker-note a.sponsor-btn svg{color:#bf3989;flex:none}
 [data-theme=dark] .maker-note a.sponsor-btn{color:var(--ink)}[data-theme=dark] .maker-note a.sponsor-btn svg{color:#db61a2}
+/* 데스크톱 권장 안내(동현둠과 같은 상자) */
+.mobile-note{margin:-6px 0 18px;padding:10px 14px;border:1px dashed var(--line);border-radius:10px;font-size:var(--text-xs);color:var(--muted);word-break:keep-all}
+.mobile-note strong{display:inline-block;margin-right:8px;padding:1px 8px;border-radius:999px;background:var(--surface2);color:var(--ink);font-size:11px}
