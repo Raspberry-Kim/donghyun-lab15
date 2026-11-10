@@ -24,7 +24,7 @@ const H='window.__donghyundoc';
   assert.strictEqual(await p.$eval('#example',e=>e.options.length),6); assert.match(await p.$eval('#stamp-mode',e=>e.textContent),/느림/);
   assert.strictEqual(await p.$eval('.series-links',e=>e.children.length),18); assert.strictEqual(await p.$eval('.series-item.is-current .series-name',e=>e.textContent.replace('™','')),'동현닥');
   assert.strictEqual(await p.$$eval('.input-marks .mark',a=>a.map(m=>m.classList.contains('on')).join()),'true,true,true,true','입력 표식: 넷 모두 on(v0.07 마우스 켬)');
-  assert.strictEqual(await p.$('#touchpad'),null,'터치패드 없음'); assert.ok(await G('window.Sprites.DOCTOR.complete && window.Sprites.DOCTOR.naturalWidth>0'),'포동이 그림 로드'); ok('첫 화면: 설정 패널 · 칸 비어 있음 · 예제 6 · 띠 18 · 입력 표식 · 터치패드 없음 · 포동이 그림');
+  assert.strictEqual(await p.$('#touchpad'),null,'터치패드 없음'); assert.ok(await G('window.Sprites.PODONG_ROWS.length===20 && window.Sprites.PODONG_ROWS.every(r=>r.length===24)'),'포동이 24×20 도트'); ok('첫 화면: 설정 패널 · 칸 비어 있음 · 예제 6 · 띠 18 · 입력 표식 · 터치패드 없음 · 동현크 포동이 도트');
   // 1) 규약 오류
   await p.fill('#code','나는 동현이냐?\n뿡뿡 도오오오옹~뿡뿡뿡\n동현이구나'); await p.click('#run'); await p.waitForTimeout(100);
   assert.match(await p.$eval('#result',e=>e.textContent),/속도 번호가 아니다/); assert.strictEqual(await G('D.mode'),'setup');
@@ -45,7 +45,9 @@ const H='window.__donghyundoc';
   await p.keyboard.press('ArrowRight'); await p.waitForTimeout(80); await p.keyboard.press('ArrowRight'); await p.waitForTimeout(80); t=await txt(); assert.strictEqual(t.piece.x,4,'→');
   await p.keyboard.press('KeyX'); await p.waitForTimeout(80); t=await txt(); assert.strictEqual(t.piece.rot,1,'X 시계'); await p.keyboard.press('KeyZ'); await p.waitForTimeout(80); t=await txt(); assert.strictEqual(t.piece.rot,0,'Z 반시계');
   await p.keyboard.press('ArrowUp'); await p.waitForTimeout(80); t=await txt(); assert.strictEqual(t.piece.rot,1,'↑ 시계(X와 같다)'); await p.keyboard.press('KeyZ'); await p.waitForTimeout(80); t=await txt(); assert.strictEqual(t.piece.rot,0,'↑ 뒤 Z 반시계'); ok('↑ 돌리기 = X 시계');
-  const y0=(await txt()).piece.y; await p.keyboard.down('ArrowDown'); await p.waitForTimeout(250); await p.keyboard.up('ArrowDown'); t=await txt(); assert.ok(t.piece.y>=y0+4,'↓ 빨리 내리기 '+t.piece.y);
+  // 충분한 빈 공간에서 본다. 앞선 키 시험 동안 바닥에 닿아 다음 알약(y=0)이 나오면 오판할 수 있다.
+  await X(`S.cells.fill(0);S.viruses=0;S.piece={x:3,y:0,rot:0,c:[1,2],shape:0};S.phase='fall';S.dropT=0;S.pt=0;`);
+  const y0=(await txt()).piece.y; await p.keyboard.down('ArrowDown'); await p.waitForFunction(()=>window.__donghyundoc.state.piece.y>=4); await p.keyboard.up('ArrowDown'); t=await txt(); assert.ok(t.piece.y>=y0+4,'↓ 빨리 내리기 '+t.piece.y);
   await p.keyboard.press('KeyA'); await p.waitForTimeout(100); assert.match(await G('S.msg'),/느림:/,'A 설명');
   await p.keyboard.press('Enter'); await p.waitForTimeout(100); assert.match(await menuText(),/잠시 멈춤/); const fr0=await G('S.time'); await p.waitForTimeout(400); assert.strictEqual(await G('S.time'),fr0,'메뉴 동안 멎음'); await mi('속도 설명'); assert.match(await menuText(),/느림:/); await p.keyboard.press('KeyZ'); await p.waitForTimeout(60); assert.match(await menuText(),/잠시 멈춤/); await mi('계속 간다'); assert.strictEqual(await menuText(),''); await p.waitForTimeout(200); assert.ok((await G('S.time'))>fr0,'계속 간다 뒤 흐른다');
   ok('키보드: ← → 한 칸 · X 시계 · Z 반시계 · ↓ 빨리 · A 설명 · Enter 메뉴(멎음) · 속도 설명 · 계속 간다');

@@ -1,7 +1,7 @@
 /* 동현닥 엔진: 8×16 약병 안에 두 칸짜리 알약(캡슐·태블릿·주사기)을 떨어뜨려 같은 색 넷을 가로·세로로 맞추면 사라지고, 바이러스를 모두 없애면 단계 클리어.
    화면과 무관한 순수 상태 기계다. 조작은 step(S,keys)의 keys{left,right,down}와 rotate(S,dir)로 들어온다. */
 (function(root){
-const GW=8, GH=16, CELL=20, BX=150, BY=26, W=480, H=360;
+const GW=8, GH=16, CELL=20, BX=160, BY=26, W=480, H=360;
 const SPEEDS=[
   {id:1,key:'low',name:'느림',frames:40,base:100,desc:'알약이 40프레임(0.67초)에 한 칸 내려온다. 처음이라면 이것으로.'},
   {id:2,key:'mid',name:'보통',frames:26,base:200,desc:'26프레임(0.43초)에 한 칸. 바이러스 하나에 200점부터.'},
