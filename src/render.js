@@ -85,46 +85,51 @@ function drawCell(g,px,py,c,shape,lx,ly,nd){
 }
 function drawVirus(g,px,py,c,frame){ const im=SP.face(c,frame,2); g.drawImage(im,px+1,py+1); }
 
-/* ---------- 약병 (v0.08 팬시 약병) ----------
- * 판(BX,BY에서 8×16칸)은 그대로 두고, 그 바깥 6px에 유리 벽을 두른다. 둥근 어깨와 바닥, 목(3·4열 위, 안쪽 폭 40px 그대로), 목 양쪽 분홍 입술과 목에 맨 리본,
- * 왼쪽 벽의 유리 반짝임, 오른쪽 벽의 눈금, 유리 속 기포, 어깨 위 반짝 별, 바닥 그림자. 판 안은 위가 밝은 연보라 유리, 칸 점은 연하게. 벽은 판 칸을 가리지 않는다 */
-const BT={wall:'#cfc3ea',wall2:'#b7a8dd',rim:'#5e4b7e',in1:'#f6f2fb',in2:'#e7def4',dot:'rgba(110,92,150,.13)',lid:'#f29bbb',lid2:'#d9688f',lidHi:'#ffd7e5',band:'#f2b705'};
+/* ---------- 청록빛 유리 약병 ----------
+ * 판(BX,BY에서 8×16칸)과 목 안쪽 40px는 그대로다. 8px 유리 벽과 두꺼운 바닥은
+ * 모두 판 바깥에 그린다. 분홍 리본을 남기고, 유리 반사·눈금은 셀보다 먼저 그린다. */
+const BT={wall:'#cee9e1',wall2:'#83b8ae',rim:'#4d7b78',in1:'#f5faf6',in2:'#e2f0e9',dot:'rgba(78,126,118,.14)',lid:'#f3b1b6',lid2:'#b96f82',lidHi:'#ffe5df',band:'#d3ab5a'};
 function bottlePath(g,x,y,w,h,T,open){ /* 바깥 윤곽: 목 → 어깨 → 몸통 → 둥근 바닥. T는 벽 두께 */
   const nl=x+3*CELL-T, nr=x+5*CELL+T, top=y-T, ny=y-17, R=12;
   g.beginPath(); g.moveTo(nl,ny); g.lineTo(nl,top-2); g.quadraticCurveTo(nl,top,nl-6,top); g.lineTo(x-T+R,top); g.quadraticCurveTo(x-T,top,x-T,top+R);
   g.lineTo(x-T,y+h+T-R); g.quadraticCurveTo(x-T,y+h+T,x-T+R,y+h+T); g.lineTo(x+w+T-R,y+h+T); g.quadraticCurveTo(x+w+T,y+h+T,x+w+T,y+h+T-R);
   g.lineTo(x+w+T,top+R); g.quadraticCurveTo(x+w+T,top,x+w+T-R,top); g.lineTo(nr+6,top); g.quadraticCurveTo(nr,top,nr,top-2); g.lineTo(nr,ny); if(!open) g.closePath(); } /* open: 테두리만 그릴 때 입구를 가로지르지 않는다 */
 function bottle(g){
-  const x=BX,y=BY,w=GW*CELL,h=GH*CELL,T=6;
+  const x=BX,y=BY,w=GW*CELL,h=GH*CELL,T=8;
   g.save(); g.lineJoin='round'; g.lineCap='round'; g.lineWidth=1; /* 앞 프레임이 남긴 선 설정에 기대지 않는다(첫 프레임과 다음 프레임이 같게) */
   /* 바닥 그림자 */
-  g.fillStyle='rgba(58,48,66,.10)'; g.beginPath(); g.ellipse(x+w/2,y+h+T+3,w/2+4,4,0,0,Math.PI*2); g.fill();
+  g.fillStyle='rgba(48,92,82,.12)'; g.beginPath(); g.ellipse(x+w/2,y+h+T+2,w/2+6,3,0,0,Math.PI*2); g.fill();
   /* 유리 벽: 바깥 윤곽을 칠하고 */
-  const wg=g.createLinearGradient(x-T,0,x+w+T,0); wg.addColorStop(0,BT.wall2); wg.addColorStop(0.18,BT.wall); wg.addColorStop(0.82,BT.wall); wg.addColorStop(1,BT.wall2);
+  const wg=g.createLinearGradient(x-T,0,x+w+T,0); wg.addColorStop(0,BT.wall2); wg.addColorStop(0.035,'#f3fff7'); wg.addColorStop(0.08,BT.wall); wg.addColorStop(0.5,'#e0f3e9'); wg.addColorStop(0.91,BT.wall); wg.addColorStop(0.965,BT.wall2); wg.addColorStop(1,'#65998f');
   bottlePath(g,x,y,w,h,T); g.fillStyle=wg; g.fill();
-  /* 판 안(목 안쪽 포함): 위가 밝은 유리 */
-  const ig=g.createLinearGradient(0,y-18,0,y+h); ig.addColorStop(0,BT.in1); ig.addColorStop(1,BT.in2);
+  /* 판 안(목 안쪽 포함): 무늬를 억제한 맑은 유리. 알약 세 색과 구별된다. */
+  const ig=g.createLinearGradient(x,y-18,x+w,y+h); ig.addColorStop(0,BT.in1); ig.addColorStop(0.55,'#eef7ef'); ig.addColorStop(1,BT.in2);
   g.fillStyle=ig; g.fillRect(x,y,w,h); g.fillRect(x+3*CELL,y-18,2*CELL,18+1);
   g.fillStyle=BT.dot; for(let i=1;i<GW;i++) for(let j=1;j<GH;j++) g.fillRect(x+i*CELL-1,y+j*CELL-1,2,2);
-  /* 유리 속 기포(칸보다 먼저 그려 알약·바이러스를 가리지 않는다) */
-  g.strokeStyle='rgba(255,255,255,.85)'; g.lineWidth=1; for(const [bx,by,br] of [[18,250,4],[30,272,2.5],[136,200,3],[124,226,2],[70,120,2],[146,92,3.5]]){ g.beginPath(); g.arc(x+bx,y+by,br,0,Math.PI*2); g.stroke(); }
+  /* 왼쪽 유리 반사. 넓은 대각선이나 기포를 판 가운데에 두지 않는다. */
+  const sheen=g.createLinearGradient(x,0,x+14,0); sheen.addColorStop(0,'rgba(255,255,255,.65)'); sheen.addColorStop(1,'rgba(255,255,255,0)');
+  g.fillStyle=sheen; g.fillRect(x,y,14,h);
+  g.fillStyle='rgba(70,116,106,.07)'; g.fillRect(x+w-2,y,2,h);
   /* 바깥 테두리와 안쪽 흰 테 */
   g.lineJoin='round'; g.lineCap='round'; bottlePath(g,x,y,w,h,T,true); g.strokeStyle=BT.rim; g.lineWidth=2; g.stroke();
-  g.strokeStyle='rgba(255,255,255,.75)'; g.lineWidth=1; g.strokeRect(x-0.5,y-0.5,w+1,h+1);
+  g.strokeStyle='rgba(80,132,119,.35)'; g.lineWidth=1; g.strokeRect(x-0.5,y-0.5,w+1,h+1);
   g.beginPath(); g.moveTo(x+3*CELL-0.5,y-1); g.lineTo(x+3*CELL-0.5,y-17); g.moveTo(x+5*CELL+0.5,y-1); g.lineTo(x+5*CELL+0.5,y-17); g.stroke();
   /* 왼쪽 벽 반짝임(긴 줄 + 짧은 점) · 어깨 반짝임 */
-  g.fillStyle='rgba(255,255,255,.8)'; rr(g,x-T+2,y+14,2,h*0.55,1); g.fill(); rr(g,x-T+2,y+h*0.55+22,2,10,1); g.fill();
+  g.fillStyle='rgba(255,255,255,.88)'; rr(g,x-T+2,y+14,2,h*0.55,1); g.fill(); rr(g,x-T+2,y+h*0.55+22,2,38,1); g.fill();
   g.fillStyle='rgba(255,255,255,.7)'; rr(g,x+8,y-T+2,30,2,1); g.fill();
   /* 오른쪽 벽 눈금(네 칸마다 길게) */
-  g.fillStyle='rgba(94,75,126,.45)'; for(let j=2;j<GH;j+=2) g.fillRect(x+w+1,y+j*CELL-1,j%4===0?4:2,1);
-  /* 목 위 입술: 양쪽에 분홍 고리(가운데 입구 40px는 열려 있어 알약이 들어온다) · 노란 띠 · 반짝임 */
+  g.fillStyle='rgba(57,109,99,.48)'; for(let j=1;j<GH;j++) g.fillRect(x+w+2,y+j*CELL-1,j%4===0?4:2,1);
+  /* 두꺼운 유리 바닥의 반사 두 줄. 맨 아래 칸은 비워 둔다. */
+  g.fillStyle='rgba(255,255,255,.85)'; rr(g,x+8,y+h+2,w-16,2,1); g.fill();
+  g.fillStyle='rgba(66,119,106,.22)'; rr(g,x+15,y+h+5,w-30,1,0.5); g.fill();
+  /* 목 위 입술: 양쪽에 황동색 고리(가운데 입구 40px는 열려 있어 알약이 들어온다) */
   for(const [lx,lw] of [[x+3*CELL-T-4,T+4],[x+5*CELL,T+4]]){ const ly=y-24;
-    g.fillStyle=BT.lid; rr(g,lx,ly,lw,9,[4,4,3,3]); g.fill(); g.strokeStyle=BT.lid2; g.lineWidth=1.5; g.stroke();
-    g.fillStyle=BT.band; g.fillRect(lx+1.5,ly+6,lw-3,1.5); g.fillStyle=BT.lidHi; g.fillRect(lx+2,ly+2,lw-5,1.5); }
+    g.fillStyle='#ead6ab'; rr(g,lx,ly,lw,9,[3,3,2,2]); g.fill(); g.strokeStyle='#aa8955'; g.lineWidth=1; g.stroke();
+    g.fillStyle=BT.band; g.fillRect(lx+1,ly+6,lw-2,2); g.fillStyle='#fff4d7'; g.fillRect(lx+2,ly+2,lw-4,2); }
   /* 목 왼쪽에 맨 분홍 리본(입구는 비워 둔다) */
   ribbon(g,x+3*CELL-T-2,y-9);
   /* 반짝 별: 어깨 위 양쪽 */
-  star(g,x+w-10,y-15,4); star(g,x+w-22,y-20,2); star(g,x+6,y-18,2.2);
+  star(g,x+w-10,y-15,3); star(g,x+w-20,y-20,1.5);
   g.restore();
 }
 function ribbon(g,kx,ky){ /* kx,ky: 매듭. 고리 둘은 왼쪽 위·왼쪽 아래로, 꼬리 둘은 어깨 위로 */
