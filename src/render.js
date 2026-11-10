@@ -9,7 +9,7 @@ const col=c=>SP.COL[c];
 
 
 /* ---------- 닥터 포동이: 알약을 던지는 네 가지 동작 ----------
- * 포동이 PNG(941×1050)를 104px 폭으로 그린다. 던지기 14프레임 동안 조각(꼬리·앞발)을 따로 떼어 움직이거나 몸 전체를 기울여,
+ * 포동이 PNG(941×1050)를 104px 폭 좌표로 그리고, v0.08부터는 화면에 그 1/2(52px)로 줄여 낸다. 던지기 14프레임 동안 조각(꼬리·앞발)을 따로 떼어 움직이거나 몸 전체를 기울여,
  * 0 꼬리치기 · 1 머리 들이받기 · 2 앞발 차기 · 3 돌아서서 뒷발 차기(좌우 뒤집어 그리고 새로 그린 뒷다리가 나온다)를 알약마다 돌아가며 한다.
  * hit: 알약이 손을 떠나는 시점(0~1). origin: 그때까지 알약이 붙어 있는 자리 */
 const DX=344, DY=36, DW=104, DSC=DW/941, DH=Math.round(1050*DSC);
@@ -21,12 +21,19 @@ const GIMMICKS=[
   {name:'paw',hit:0.4,origin:a=>({x:DX+8-a*16,y:DY+104-a*18})},
   {name:'kick',hit:0.42,origin:a=>({x:DX+10-a*24,y:DY+104-a*10})}];
 function gimIndex(S){ return (S.pieces*3+S.stage*5+S.stagesDone)%GIMMICKS.length; }
-function gimmick(S){ const G=GIMMICKS[gimIndex(S)]; const amp=pt=>{ const u=pt/E.THROW; return u<G.hit?Math.sin(u/G.hit*Math.PI/2):Math.max(0,1-(u-G.hit)/(1-G.hit)*1.6); }; return {...G,amp,origin:pt=>G.origin(amp(pt))}; }
+/* v0.08: 포동이를 가로세로 1/2로 줄여 그린다. 원래 좌표(DX·DY, 104px 폭)로 그린 것을 (PX,PY)에 PS배로 옮긴다. 알약이 붙어 있는 자리도 같이 옮긴다 */
+const PS=0.5, PX=372, PY=152-Math.round(DH*PS);
+const toP=o=>({x:PX+(o.x-DX)*PS, y:PY+(o.y-DY)*PS});
+function gimmick(S){ const G=GIMMICKS[gimIndex(S)]; const amp=pt=>{ const u=pt/E.THROW; return u<G.hit?Math.sin(u/G.hit*Math.PI/2):Math.max(0,1-(u-G.hit)/(1-G.hit)*1.6); }; return {...G,amp,origin:pt=>toP(G.origin(amp(pt)))}; }
 function polyPath(g,pts,ox,oy,add){ if(!add) g.beginPath(); pts.forEach(([x,y],i)=>{ const X=ox+x*DSC, Y=oy+y*DSC; i?g.lineTo(X,Y):g.moveTo(X,Y); }); g.closePath(); }
 function hindLeg(g,x,y,a){ /* 새로 그린 뒷다리: 몸 뒤에서 왼쪽으로 뻗는다. a 0~1 */
   const L=10+Math.round(a*16); g.fillStyle='#2b2f45'; g.fillRect(x-L-2,y-1,L+4,10); g.fillStyle='#f1e6cf'; g.fillRect(x-L,y+1,L+2,6); g.fillStyle='#e6d8bb'; g.fillRect(x-L,y+5,L+2,2);
   g.fillStyle='#2b2f45'; g.fillRect(x-L-7,y-2,8,12); g.fillStyle='#f1e6cf'; g.fillRect(x-L-6,y,6,8); g.fillStyle='#8a7f73'; g.fillRect(x-L-5,y+6,1,1); g.fillRect(x-L-3,y+7,1,1); g.fillRect(x-L-1,y+6,1,1); }
-function drawDoctor(g,S,T){
+function drawDoctor(g,S,T){ /* 작은 그림자 위에 반 크기로 */
+  if(!(SP.DOCTOR.complete&&SP.DOCTOR.naturalWidth)) return;
+  g.save(); g.fillStyle='rgba(58,48,66,.12)'; g.beginPath(); g.ellipse(PX+DW*PS/2,PY+DH*PS-1,DW*PS*0.42,3,0,0,Math.PI*2); g.fill();
+  g.translate(PX,PY); g.scale(PS,PS); g.translate(-DX,-DY); drawDoctorFull(g,S,T); g.restore(); }
+function drawDoctorFull(g,S,T){
   const D=SP.DOCTOR; if(!(D.complete&&D.naturalWidth)) return;
   const throwing=S.status==='play'&&S.phase==='throw', G=throwing?gimmick(S):null, a=G?G.amp(S.pt):0, bob=throwing?-2:Math.sin(T/30)*1.5, y0=DY+bob;
   if(!G||G.name==='head'){ g.save(); if(G){ g.translate(DX+DW/2,y0+DH); g.rotate(-a*0.32); g.translate(-DX-DW/2-a*8,-y0-DH+a*5); } g.drawImage(D,DX,y0,DW,DH); g.restore(); return; }
@@ -78,16 +85,55 @@ function drawCell(g,px,py,c,shape,lx,ly,nd){
 }
 function drawVirus(g,px,py,c,frame){ const im=SP.face(c,frame,2); g.drawImage(im,px+1,py+1); }
 
-/* ---------- 약병 ---------- */
+/* ---------- 약병 (v0.08 팬시 약병) ----------
+ * 판(BX,BY에서 8×16칸)은 그대로 두고, 그 바깥 6px에 유리 벽을 두른다. 둥근 어깨와 바닥, 목(3·4열 위, 안쪽 폭 40px 그대로), 목 양쪽 분홍 입술과 목에 맨 리본,
+ * 왼쪽 벽의 유리 반짝임, 오른쪽 벽의 눈금, 유리 속 기포, 어깨 위 반짝 별, 바닥 그림자. 판 안은 위가 밝은 연보라 유리, 칸 점은 연하게. 벽은 판 칸을 가리지 않는다 */
+const BT={wall:'#cfc3ea',wall2:'#b7a8dd',rim:'#5e4b7e',in1:'#f6f2fb',in2:'#e7def4',dot:'rgba(110,92,150,.13)',lid:'#f29bbb',lid2:'#d9688f',lidHi:'#ffd7e5',band:'#f2b705'};
+function bottlePath(g,x,y,w,h,T,open){ /* 바깥 윤곽: 목 → 어깨 → 몸통 → 둥근 바닥. T는 벽 두께 */
+  const nl=x+3*CELL-T, nr=x+5*CELL+T, top=y-T, ny=y-17, R=12;
+  g.beginPath(); g.moveTo(nl,ny); g.lineTo(nl,top-2); g.quadraticCurveTo(nl,top,nl-6,top); g.lineTo(x-T+R,top); g.quadraticCurveTo(x-T,top,x-T,top+R);
+  g.lineTo(x-T,y+h+T-R); g.quadraticCurveTo(x-T,y+h+T,x-T+R,y+h+T); g.lineTo(x+w+T-R,y+h+T); g.quadraticCurveTo(x+w+T,y+h+T,x+w+T,y+h+T-R);
+  g.lineTo(x+w+T,top+R); g.quadraticCurveTo(x+w+T,top,x+w+T-R,top); g.lineTo(nr+6,top); g.quadraticCurveTo(nr,top,nr,top-2); g.lineTo(nr,ny); if(!open) g.closePath(); } /* open: 테두리만 그릴 때 입구를 가로지르지 않는다 */
 function bottle(g){
-  const x=BX,y=BY,w=GW*CELL,h=GH*CELL;
-  g.fillStyle=C.glass; g.fillRect(x,y,w,h);
-  g.fillStyle=C.dot; for(let i=1;i<GW;i++) for(let j=1;j<GH;j++) g.fillRect(x+i*CELL-1,y+j*CELL-1,2,2);
-  g.strokeStyle=C.glassLine; g.lineWidth=3; g.lineJoin='round';
-  g.beginPath(); g.moveTo(x+3*CELL,y-2); g.lineTo(x+3*CELL,y-16); g.moveTo(x+5*CELL,y-2); g.lineTo(x+5*CELL,y-16);
-  g.moveTo(x+3*CELL,y-2); g.lineTo(x,y-2); g.lineTo(x,y+h+2); g.lineTo(x+w,y+h+2); g.lineTo(x+w,y-2); g.lineTo(x+5*CELL,y-2); g.stroke();
-  g.lineWidth=2; g.beginPath(); g.moveTo(x+3*CELL-4,y-18); g.lineTo(x+5*CELL+4,y-18); g.stroke();
+  const x=BX,y=BY,w=GW*CELL,h=GH*CELL,T=6;
+  g.save(); g.lineJoin='round'; g.lineCap='round'; g.lineWidth=1; /* 앞 프레임이 남긴 선 설정에 기대지 않는다(첫 프레임과 다음 프레임이 같게) */
+  /* 바닥 그림자 */
+  g.fillStyle='rgba(58,48,66,.10)'; g.beginPath(); g.ellipse(x+w/2,y+h+T+3,w/2+4,4,0,0,Math.PI*2); g.fill();
+  /* 유리 벽: 바깥 윤곽을 칠하고 */
+  const wg=g.createLinearGradient(x-T,0,x+w+T,0); wg.addColorStop(0,BT.wall2); wg.addColorStop(0.18,BT.wall); wg.addColorStop(0.82,BT.wall); wg.addColorStop(1,BT.wall2);
+  bottlePath(g,x,y,w,h,T); g.fillStyle=wg; g.fill();
+  /* 판 안(목 안쪽 포함): 위가 밝은 유리 */
+  const ig=g.createLinearGradient(0,y-18,0,y+h); ig.addColorStop(0,BT.in1); ig.addColorStop(1,BT.in2);
+  g.fillStyle=ig; g.fillRect(x,y,w,h); g.fillRect(x+3*CELL,y-18,2*CELL,18+1);
+  g.fillStyle=BT.dot; for(let i=1;i<GW;i++) for(let j=1;j<GH;j++) g.fillRect(x+i*CELL-1,y+j*CELL-1,2,2);
+  /* 유리 속 기포(칸보다 먼저 그려 알약·바이러스를 가리지 않는다) */
+  g.strokeStyle='rgba(255,255,255,.85)'; g.lineWidth=1; for(const [bx,by,br] of [[18,250,4],[30,272,2.5],[136,200,3],[124,226,2],[70,120,2],[146,92,3.5]]){ g.beginPath(); g.arc(x+bx,y+by,br,0,Math.PI*2); g.stroke(); }
+  /* 바깥 테두리와 안쪽 흰 테 */
+  g.lineJoin='round'; g.lineCap='round'; bottlePath(g,x,y,w,h,T,true); g.strokeStyle=BT.rim; g.lineWidth=2; g.stroke();
+  g.strokeStyle='rgba(255,255,255,.75)'; g.lineWidth=1; g.strokeRect(x-0.5,y-0.5,w+1,h+1);
+  g.beginPath(); g.moveTo(x+3*CELL-0.5,y-1); g.lineTo(x+3*CELL-0.5,y-17); g.moveTo(x+5*CELL+0.5,y-1); g.lineTo(x+5*CELL+0.5,y-17); g.stroke();
+  /* 왼쪽 벽 반짝임(긴 줄 + 짧은 점) · 어깨 반짝임 */
+  g.fillStyle='rgba(255,255,255,.8)'; rr(g,x-T+2,y+14,2,h*0.55,1); g.fill(); rr(g,x-T+2,y+h*0.55+22,2,10,1); g.fill();
+  g.fillStyle='rgba(255,255,255,.7)'; rr(g,x+8,y-T+2,30,2,1); g.fill();
+  /* 오른쪽 벽 눈금(네 칸마다 길게) */
+  g.fillStyle='rgba(94,75,126,.45)'; for(let j=2;j<GH;j+=2) g.fillRect(x+w+1,y+j*CELL-1,j%4===0?4:2,1);
+  /* 목 위 입술: 양쪽에 분홍 고리(가운데 입구 40px는 열려 있어 알약이 들어온다) · 노란 띠 · 반짝임 */
+  for(const [lx,lw] of [[x+3*CELL-T-4,T+4],[x+5*CELL,T+4]]){ const ly=y-24;
+    g.fillStyle=BT.lid; rr(g,lx,ly,lw,9,[4,4,3,3]); g.fill(); g.strokeStyle=BT.lid2; g.lineWidth=1.5; g.stroke();
+    g.fillStyle=BT.band; g.fillRect(lx+1.5,ly+6,lw-3,1.5); g.fillStyle=BT.lidHi; g.fillRect(lx+2,ly+2,lw-5,1.5); }
+  /* 목 왼쪽에 맨 분홍 리본(입구는 비워 둔다) */
+  ribbon(g,x+3*CELL-T-2,y-9);
+  /* 반짝 별: 어깨 위 양쪽 */
+  star(g,x+w-10,y-15,4); star(g,x+w-22,y-20,2); star(g,x+6,y-18,2.2);
+  g.restore();
 }
+function ribbon(g,kx,ky){ /* kx,ky: 매듭. 고리 둘은 왼쪽 위·왼쪽 아래로, 꼬리 둘은 어깨 위로 */
+  g.save(); g.lineJoin='round'; g.lineWidth=1.2; g.strokeStyle=BT.lid2;
+  const loop=(a)=>{ g.save(); g.translate(kx,ky); g.rotate(a); g.fillStyle=BT.lid; g.beginPath(); g.moveTo(0,0); g.bezierCurveTo(-6,-7,-15,-6,-14,0); g.bezierCurveTo(-15,6,-6,7,0,0); g.closePath(); g.fill(); g.stroke(); g.fillStyle=BT.lidHi; g.beginPath(); g.ellipse(-9,-2,3,1.2,0,0,Math.PI*2); g.fill(); g.restore(); };
+  loop(-0.35); loop(0.45);
+  g.fillStyle=BT.lid; for(const [tx,ty] of [[-9,10],[-3,12]]){ g.beginPath(); g.moveTo(kx-1,ky+1); g.lineTo(kx+tx,ky+ty); g.lineTo(kx+tx+3,ky+ty-1); g.lineTo(kx+1,ky+1); g.closePath(); g.fill(); g.stroke(); }
+  g.fillStyle=BT.lid2; g.beginPath(); g.arc(kx,ky,2.6,0,Math.PI*2); g.fill(); g.fillStyle=BT.lidHi; g.fillRect(kx-1,ky-1.5,1.5,1); g.restore(); }
+function star(g,cx,cy,r){ g.save(); g.fillStyle='#f2b705'; g.beginPath(); for(let i=0;i<8;i++){ const a=i*Math.PI/4, rr2=i%2?r*0.38:r; g.lineTo(cx+Math.cos(a)*rr2,cy+Math.sin(a)*rr2); } g.closePath(); g.fill(); g.restore(); }
 
 /* ---------- 패널 ---------- */
 function wrapText(g,t,maxW){ /* 넘치면 ' · ' 뒤에서 먼저 끊고, 없으면 마지막 띄어쓰기에서 끊는다. 한 글자 낱말('한 칸'의 '한') 바로 뒤에서는 끊지 않는다. 띄어쓰기가 없으면 그 자리에서 */
@@ -127,8 +173,9 @@ function render(g,S,T){
     const p=S.piece, cs=E.cellsOf(p);
     if(S.phase==='throw'){ const u=S.pt/E.THROW, G=gimmick(S), o=G.origin(S.pt); const x1=BX+3*CELL, y1=BY;
       /* 준비 동작 동안은 알약이 포동이의 꼬리·머리·발에 붙어 있고, 때리는 순간부터 포물선으로 약병 입구까지 날아간다 */
-      let x=o.x, y=o.y; if(u>G.hit){ const v=(u-G.hit)/(1-G.hit), e=1-(1-v)*(1-v); x=o.x+(x1-o.x)*e; y=o.y+(y1-o.y)*e-Math.sin(v*Math.PI)*36; }
-      drawCell(g,x,y,p.c[0],p.shape,1,0,false); drawCell(g,x+CELL,y,p.c[1],p.shape,-1,0,true); }
+      let x=o.x, y=o.y, sc=PS; if(u>G.hit){ const v=(u-G.hit)/(1-G.hit), e=1-(1-v)*(1-v); x=o.x+(x1-o.x)*e; y=o.y+(y1-o.y)*e-Math.sin(v*Math.PI)*36; sc=PS+(1-PS)*e; }
+      /* 포동이가 쥔 동안은 포동이와 같은 1/2 크기, 날아가며 약병 입구에서 제 크기가 된다(v0.08) */
+      g.save(); g.translate(x,y); g.scale(sc,sc); drawCell(g,0,0,p.c[0],p.shape,1,0,false); drawCell(g,CELL,0,p.c[1],p.shape,-1,0,true); g.restore(); }
     else { g.save(); g.beginPath(); g.rect(BX,BY-20,GW*CELL,GH*CELL+20); g.clip(); const [a,b]=cs, ni=E.needleIdx(p.rot); drawCell(g,BX+a.x*CELL,BY+a.y*CELL,a.c,p.shape,b.x-a.x,b.y-a.y,ni===0); drawCell(g,BX+b.x*CELL,BY+b.y*CELL,b.c,p.shape,a.x-b.x,a.y-b.y,ni===1); g.restore(); }
   }
   /* 지움 효과 */
