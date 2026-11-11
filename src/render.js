@@ -1,7 +1,7 @@
 /* 동현닥 화면: 왼쪽 정보 · 가운데 약병 · 오른쪽 닥터 포동이와 다음 알약, 바이러스 수. 알약은 캡슐·태블릿·주사기 세 모양으로 그린다(색은 같은 규칙). */
 (function(){
 const E=window.Engine, SP=window.Sprites;
-const C={paper:'#fbf7ef',panel:'#f3eee4',line:'#dcd2c1',ink:'#3a3042',sub:'#6d6178',glass:'#ebe5f3',glassLine:'#8d84a0',dot:'rgba(74,66,88,.10)',accent:'#f2b705',white:'#ffffff'};
+const C={paper:'#f1eee3',panel:'#e8e9df',line:'#bdcbbf',ink:'#304c4e',sub:'#526b65',glass:'#e4eee5',glassLine:'#6f968d',dot:'rgba(69,103,97,.08)',accent:'#b79a60',white:'#fffdf4'};
 const {GW,GH,CELL,BX,BY}=E;
 const FONT='Pretendard, "Apple SD Gothic Neo", sans-serif';
 function rr(g,x,y,w,h,r){ const R=Array.isArray(r)?r:[r,r,r,r]; g.beginPath(); g.moveTo(x+R[0],y); g.lineTo(x+w-R[1],y); g.quadraticCurveTo(x+w,y,x+w,y+R[1]); g.lineTo(x+w,y+h-R[2]); g.quadraticCurveTo(x+w,y+h,x+w-R[2],y+h); g.lineTo(x+R[3],y+h); g.quadraticCurveTo(x,y+h,x,y+h-R[3]); g.lineTo(x,y+R[0]); g.quadraticCurveTo(x,y,x+R[0],y); g.closePath(); }
@@ -43,18 +43,19 @@ function drawDoctor(g,S,T){
 const ang=(lx,ly)=>Math.atan2(ly,lx); /* 짝 쪽을 가리키는 각 */
 function drawCell(g,px,py,c,shape,lx,ly,nd){
   const k=col(c), s=CELL, m=2, linked=lx||ly, cx=px+s/2, cy=py+s/2;
+  const enamel=g.createLinearGradient(px,py,px+s,py+s);enamel.addColorStop(0,k.hi);enamel.addColorStop(.45,k.b);enamel.addColorStop(1,k.b);
   g.lineWidth=1; g.strokeStyle='rgba(58,48,66,.75)';
   if(shape===0){ /* 캡슐: 짝 쪽은 평평, 바깥쪽은 둥글다. 홑알은 둥근 점 */
-    if(!linked){ g.fillStyle=k.b; g.beginPath(); g.arc(px+s/2,py+s/2,6.5,0,Math.PI*2); g.fill(); g.stroke(); g.fillStyle='rgba(255,255,255,.55)'; g.beginPath(); g.arc(px+s/2-2,py+s/2-2,2,0,Math.PI*2); g.fill(); return; }
+    if(!linked){ g.fillStyle=enamel; g.beginPath(); g.arc(px+s/2,py+s/2,6.5,0,Math.PI*2); g.fill(); g.stroke(); g.fillStyle='rgba(255,255,255,.45)'; g.beginPath(); g.arc(px+s/2-2,py+s/2-2,2,0,Math.PI*2); g.fill(); return; }
     const R=8, rad=[lx<0||ly<0?0:R, lx>0||ly<0?0:R, lx>0||ly>0?0:R, lx<0||ly>0?0:R];
     /* 가로 짝: 왼쪽 칸은 오른쪽 모서리가 평평(rad[1],rad[2]=0), 오른쪽 칸은 왼쪽 모서리가 평평 */
     const x=px+(lx<0?0:m), y=py+(ly<0?0:m), w=s-m-(lx?0:m), h=s-m-(ly?0:m);
-    g.fillStyle=k.b; rr(g,x,y,w,h,rad); g.fill(); g.stroke();
+    g.fillStyle=enamel; rr(g,x,y,w,h,rad); g.fill(); g.stroke();
     g.fillStyle='rgba(255,255,255,.5)'; rr(g,x+3,y+3,w-6,3,1.5); g.fill();
     return; }
   if(shape===1){ /* 태블릿: 납작한 모서리 둥근 네모, 가운데 홈 */
     const x=px+m, y=py+m, w=s-2*m, h=s-2*m;
-    g.fillStyle=k.b; rr(g,x,y,w,h,4); g.fill(); g.stroke();
+    g.fillStyle=enamel; rr(g,x,y,w,h,4); g.fill(); g.stroke();
     g.strokeStyle='rgba(58,48,66,.45)'; g.beginPath(); if(ly){ g.moveTo(x+3,y+h/2); g.lineTo(x+w-3,y+h/2); } else { g.moveTo(x+w/2,y+3); g.lineTo(x+w/2,y+h-3); } g.stroke();
     g.fillStyle='rgba(255,255,255,.45)'; rr(g,x+2,y+2,w-4,3,1.5); g.fill();
     if(linked){ g.fillStyle='rgba(58,48,66,.25)'; if(lx>0) g.fillRect(px+s-2,py+5,2,s-10); if(lx<0) g.fillRect(px,py+5,2,s-10); if(ly>0) g.fillRect(px+5,py+s-2,s-10,2); if(ly<0) g.fillRect(px+5,py,s-10,2); }
@@ -80,7 +81,7 @@ function drawVirus(g,px,py,c,frame){ const im=SP.face(c,frame,2); g.drawImage(im
 /* ---------- 청록빛 유리 약병 ----------
  * 판(BX,BY에서 8×16칸)과 목 안쪽 40px는 그대로다. 8px 유리 벽과 두꺼운 바닥은
  * 모두 판 바깥에 그린다. 분홍 리본을 남기고, 유리 반사·눈금은 셀보다 먼저 그린다. */
-const BT={wall:'#cee9e1',wall2:'#83b8ae',rim:'#4d7b78',in1:'#f5faf6',in2:'#e2f0e9',dot:'rgba(78,126,118,.14)',lid:'#f3b1b6',lid2:'#b96f82',lidHi:'#ffe5df',band:'#d3ab5a'};
+const BT={wall:'#c5ddd2',wall2:'#80a79d',rim:'#4c716e',in1:'#f1f5eb',in2:'#e0eadd',dot:'rgba(78,110,98,.10)',lid:'#ce959e',lid2:'#986b7a',lidHi:'#efd3ca',band:'#baa06b'};
 function bottlePath(g,x,y,w,h,T,open){ /* 바깥 윤곽: 목 → 어깨 → 몸통 → 둥근 바닥. T는 벽 두께 */
   const nl=x+3*CELL-T, nr=x+5*CELL+T, top=y-T, ny=y-17, R=12;
   g.beginPath(); g.moveTo(nl,ny); g.lineTo(nl,top-2); g.quadraticCurveTo(nl,top,nl-6,top); g.lineTo(x-T+R,top); g.quadraticCurveTo(x-T,top,x-T,top+R);
@@ -97,7 +98,7 @@ function bottle(g){
   /* 판 안(목 안쪽 포함): 무늬를 억제한 맑은 유리. 알약 세 색과 구별된다. */
   const ig=g.createLinearGradient(x,y-18,x+w,y+h); ig.addColorStop(0,BT.in1); ig.addColorStop(0.55,'#eef7ef'); ig.addColorStop(1,BT.in2);
   g.fillStyle=ig; g.fillRect(x,y,w,h); g.fillRect(x+3*CELL,y-18,2*CELL,18+1);
-  g.fillStyle=BT.dot; for(let i=1;i<GW;i++) for(let j=1;j<GH;j++) g.fillRect(x+i*CELL-1,y+j*CELL-1,2,2);
+  g.fillStyle=BT.dot; for(let i=1;i<GW;i++) for(let j=1;j<GH;j++) g.fillRect(x+i*CELL,y+j*CELL,1,1);
   /* 왼쪽 유리 반사. 넓은 대각선이나 기포를 판 가운데에 두지 않는다. */
   const sheen=g.createLinearGradient(x,0,x+14,0); sheen.addColorStop(0,'rgba(255,255,255,.65)'); sheen.addColorStop(1,'rgba(255,255,255,0)');
   g.fillStyle=sheen; g.fillRect(x,y,14,h);
@@ -130,7 +131,7 @@ function ribbon(g,kx,ky){ /* kx,ky: 매듭. 고리 둘은 왼쪽 위·왼쪽 아
   loop(-0.35); loop(0.45);
   g.fillStyle=BT.lid; for(const [tx,ty] of [[-9,10],[-3,12]]){ g.beginPath(); g.moveTo(kx-1,ky+1); g.lineTo(kx+tx,ky+ty); g.lineTo(kx+tx+3,ky+ty-1); g.lineTo(kx+1,ky+1); g.closePath(); g.fill(); g.stroke(); }
   g.fillStyle=BT.lid2; g.beginPath(); g.arc(kx,ky,2.6,0,Math.PI*2); g.fill(); g.fillStyle=BT.lidHi; g.fillRect(kx-1,ky-1.5,1.5,1); g.restore(); }
-function star(g,cx,cy,r){ g.save(); g.fillStyle='#f2b705'; g.beginPath(); for(let i=0;i<8;i++){ const a=i*Math.PI/4, rr2=i%2?r*0.38:r; g.lineTo(cx+Math.cos(a)*rr2,cy+Math.sin(a)*rr2); } g.closePath(); g.fill(); g.restore(); }
+function star(g,cx,cy,r){ g.save(); g.fillStyle=C.accent; g.beginPath(); for(let i=0;i<8;i++){ const a=i*Math.PI/4, rr2=i%2?r*0.38:r; g.lineTo(cx+Math.cos(a)*rr2,cy+Math.sin(a)*rr2); } g.closePath(); g.fill(); g.restore(); }
 
 /* ---------- 패널 ---------- */
 function wrapText(g,t,maxW){ /* 넘치면 ' · ' 뒤에서 먼저 끊고, 없으면 마지막 띄어쓰기에서 끊는다. 한 글자 낱말('한 칸'의 '한') 바로 뒤에서는 끊지 않는다. 띄어쓰기가 없으면 그 자리에서 */
@@ -142,7 +143,10 @@ function wrapText(g,t,maxW){ /* 넘치면 ' · ' 뒤에서 먼저 끊고, 없으
     const c=cut(n); if(c&&g.measureText(c[0]).width<=maxW){ out.push(c[0].trim()); cur=c[1]; } else { out.push(cur.trim()); cur=ch===' '?'':ch; } }
   if(cur.trim()) out.push(cur.trim()); return out; }
 function panel(g,x,y,w,h,tint=C.panel){
-  g.fillStyle=tint;rr(g,x,y,w,h,8);g.fill();g.strokeStyle=C.line;g.lineWidth=1;g.stroke();
+  g.fillStyle='rgba(48,76,78,.06)';rr(g,x,y+2,w,h,6);g.fill();
+  g.fillStyle=tint;rr(g,x,y,w,h,6);g.fill();g.strokeStyle=C.line;g.lineWidth=1;g.stroke();
+  g.fillStyle='#faf9ef';g.fillRect(x+7,y+1,w-14,1);
+  g.fillStyle='#7d9c8e';g.fillRect(x+12,y+1,18,2);
 }
 function text(g,t,x,y,size=10,color=C.sub,weight=600,align='left'){
   g.font=`${weight} ${size}px ${FONT}`;g.fillStyle=color;g.textAlign=align;g.textBaseline='top';g.fillText(t,x,y);
@@ -170,9 +174,9 @@ function render(g,S,T){
     text(g,'X·↑ 시계 · Z 반시계',76,321,9,C.sub,500,'center');
     text(g,'Enter 메뉴',76,334,9,C.sub,500,'center');
   }
-  panel(g,340,26,128,164,'#edf3ec');
+  panel(g,340,26,128,164,'#e0eade');
   text(g,'닥터 포동이',352,38,11,'#356b61',700);
-  g.fillStyle='#d5e3d6';g.fillRect(352,58,104,1);
+  g.fillStyle=C.line;g.fillRect(352,58,104,1);
   text(g,S.status==='play'&&S.phase==='throw'?gimmick(S).label:'알약을 준비하는 중',404,162,10,C.sub,500,'center');
   bottle(g);
   /* 칸 */

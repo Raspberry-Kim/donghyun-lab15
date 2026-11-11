@@ -60,6 +60,8 @@ const H='window.__donghyundoc';
     await X(`S.piece.rot=0; S.piece.shape=0;`); const s0=at(200,120); await p.mouse.move(...s0); await p.mouse.down(); for(let i=1;i<=9;i++) await p.mouse.move(s0[0]+i*5*k,s0[1]); await p.waitForTimeout(40); t=await txt(); assert.strictEqual(t.piece.x,5,'오른쪽 45px 끌기 = 두 칸');
     for(let i=1;i<=6;i++) await p.mouse.move(s0[0]+45*k-i*5*k,s0[1]); t=await txt(); assert.strictEqual(t.piece.x,4,'왼쪽 30px = 한 칸');
     for(let i=1;i<=9;i++) await p.mouse.move(s0[0]+15*k,s0[1]+i*5*k); t=await txt(); assert.deepStrictEqual([t.piece.x,t.piece.y],[4,7],'아래 45px = 두 줄');
+    // 아래 드래그는 dropT를 0으로 되돌린다. 위 드래그를 검사하는 동안 자연 낙하가 섞이지 않게 다시 고정한다.
+    await X(`S.dropT=-1e6;`);
     for(let i=1;i<=6;i++) await p.mouse.move(s0[0]+15*k,s0[1]+45*k-i*10*k); t=await txt(); assert.strictEqual(t.piece.y,7,'위로는 안 올라감'); await p.mouse.up(); await p.waitForTimeout(60); t=await txt(); assert.strictEqual(t.piece.rot,0,'끈 뒤 놓아도 돌지 않음');
     await p.keyboard.press('Enter'); await p.waitForTimeout(80); await p.mouse.click(...pc); await p.waitForTimeout(80); t=await txt(); assert.strictEqual(t.piece.rot,0,'메뉴 동안 찍어도 그대로'); await p.keyboard.press('KeyZ'); await p.waitForTimeout(80);
     await X(`S.dropT=0;`); ok('마우스: 알약 찍기 X · 태블릿 거꾸로 · 끌기 좌우·아래 · 위로는 안 감 · 메뉴 중 무시'); }
