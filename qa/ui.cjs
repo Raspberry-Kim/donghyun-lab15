@@ -22,9 +22,9 @@ const H='window.__donghyundoc';
   assert.strictEqual(await G('D.mode'),'setup'); assert.ok(!(await p.$eval('#setup-panel',e=>e.hidden))); assert.ok(await p.$eval('#hud',e=>e.hidden));
   assert.deepStrictEqual(await p.$$eval('.slot-btn',a=>a.map(b=>b.disabled)),[true,true,true]); assert.ok(await p.$eval('#full',e=>e.disabled));
   assert.strictEqual(await p.$eval('#example',e=>e.options.length),6); assert.match(await p.$eval('#stamp-mode',e=>e.textContent),/느림/);
-  assert.strictEqual(await p.$eval('.series-links',e=>e.children.length),18); assert.strictEqual(await p.$eval('.series-item.is-current .series-name',e=>e.textContent.replace('™','')),'동현닥');
+  assert.strictEqual(await p.$eval('.series-links',e=>e.children.length),19); assert.strictEqual(await p.$eval('.series-item.is-current .series-name',e=>e.textContent.replace('™','')),'동현닥');
   assert.strictEqual(await p.$$eval('.input-marks .mark',a=>a.map(m=>m.classList.contains('on')).join()),'true,true,true,true','입력 표식: 넷 모두 on(v0.07 마우스 켬)');
-  assert.strictEqual(await p.$('#touchpad'),null,'터치패드 없음'); assert.ok(await G('window.Sprites.PODONG_ROWS.length===20 && window.Sprites.PODONG_ROWS.every(r=>r.length===24)'),'포동이 24×20 도트'); ok('첫 화면: 설정 패널 · 칸 비어 있음 · 예제 6 · 띠 18 · 입력 표식 · 터치패드 없음 · 동현크 포동이 도트');
+  assert.strictEqual(await p.$('#touchpad'),null,'터치패드 없음'); assert.ok(await G('window.Sprites.PODONG_ROWS.length===20 && window.Sprites.PODONG_ROWS.every(r=>r.length===24)'),'포동이 24×20 도트'); ok('첫 화면: 설정 패널 · 칸 비어 있음 · 예제 6 · 띠 19 · 입력 표식 · 터치패드 없음 · 동현크 포동이 도트');
   // 1) 규약 오류
   await p.fill('#code','나는 동현이냐?\n뿡뿡 도오오오옹~뿡뿡뿡\n동현이구나'); await p.click('#run'); await p.waitForTimeout(100);
   assert.match(await p.$eval('#result',e=>e.textContent),/속도 번호가 아니다/); assert.strictEqual(await G('D.mode'),'setup');
@@ -107,8 +107,8 @@ const H='window.__donghyundoc';
   await m.goto(url); await m.waitForTimeout(400); const MG=(js)=>m.evaluate(`(()=>{const D=${H};const S=D.state;return (${js});})()`);
   await m.tap('#run'); await m.waitForTimeout(200); assert.strictEqual(await MG('D.mode'),'play'); assert.strictEqual(await m.$('#touchpad'),null);
   await m.tap('#full'); await m.waitForTimeout(500); assert.ok(!(await m.$eval('#exit-full',e=>e.hidden))); assert.ok((await m.$eval('#board',e=>e.getBoundingClientRect().width))>=360); await m.tap('#exit-full'); await m.waitForTimeout(300); assert.ok(await m.$eval('#exit-full',e=>e.hidden));
-  assert.strictEqual(await m.$eval('.series-links',e=>e.children.length),18); const strip=await m.$eval('.series-links',e=>{ const n=e.children.length, L=e.querySelector('.series-item[data-series="lang"]'); const r=[...e.children].map(c=>c.getBoundingClientRect()); return {n, langW:L.getBoundingClientRect().width, otherW:r[1].width}; });
-  assert.ok(Math.abs(strip.langW-strip.otherW)<2,'18개(짝수)라 동현랭도 반 폭 '+JSON.stringify(strip)); ok('휴대폰: 터치패드 없음 · 전체 화면 · 띠 18 짝수 → 동현랭 반 폭');
+  assert.strictEqual(await m.$eval('.series-links',e=>e.children.length),19); const strip=await m.$eval('.series-links',e=>{ const n=e.children.length, L=e.querySelector('.series-item[data-series="lang"]'); const r=[...e.children].map(c=>c.getBoundingClientRect()); return {n, langW:L.getBoundingClientRect().width, otherW:r[1].width}; });
+  assert.ok(strip.langW>strip.otherW*1.9,'19개(홀수): 동현랭 두 칸 폭 '+JSON.stringify(strip)); ok('휴대폰: 터치패드 없음 · 전체 화면 · 띠 19 홀수 → 동현랭 두 칸 폭');
   { /* v0.06 · 안내 글(A 속도 설명)은 왼쪽 아래 조작 안내 자리에 뜨고 약병을 가리지 않는다. 줄은 폭 116px 안에 7줄까지 */
     const q=await b.newPage(); q.on('pageerror',e=>errs.push(e.message)); await q.goto(url); await q.waitForTimeout(300);
     const r=await q.evaluate(()=>{ const E=window.Engine,R=window.Render; const cv=document.createElement('canvas'); cv.width=E.W; cv.height=E.H; const g=cv.getContext('2d');
