@@ -2,7 +2,7 @@ cff-version: 1.2.0
 message: "If you use this software, please cite it using the metadata below."
 title: "Donghyundoc (동현닥): a single-player pill-dropping puzzle laboratory in the manner of Dr. Mario, with the speed, virus level and pre-placed pills set through the esoteric language Donghyun-lang"
 type: software
-version: "0.13"
+version: "0.14"
 doi: "10.5281/zenodo.24084897"
 date-released: "2026-11-12"
 authors:
