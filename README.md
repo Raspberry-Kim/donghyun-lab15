@@ -1,4 +1,4 @@
-# 동현닥 v0.12
+# 동현닥 v0.13
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24084897.svg)](https://doi.org/10.5281/zenodo.24084897)
 
