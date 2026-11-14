@@ -96,8 +96,8 @@ S=E.newGame({speed:2,stage:3,pre:2,seed:99}); run(S,K({down:true}),200);
 const copy=JSON.parse(JSON.stringify(S,(k,v)=>k==='events'||k==='fx'?[]:v)); copy.events=[]; copy.fx=[];
 const a=[],b=[]; for(let i=0;i<600;i++){ E.step(S,K({left:i%7<3,down:i%5===0})); E.step(copy,K({left:i%7<3,down:i%5===0})); } 
 assert.strictEqual(JSON.stringify(S,(k,v)=>k==='events'||k==='fx'?undefined:v),JSON.stringify(copy,(k,v)=>k==='events'||k==='fx'?undefined:v)); ok('저장 직렬화 왕복 후 같은 진행');
-// 14) 같은 씨앗이면 같은 판
-assert.strictEqual(JSON.stringify(E.newGame({speed:1,stage:7,pre:2,seed:5}).cells),JSON.stringify(E.newGame({speed:1,stage:7,pre:2,seed:5}).cells)); ok('같은 씨앗 → 같은 판');
+// 14) 같은 시드면 같은 판
+assert.strictEqual(JSON.stringify(E.newGame({speed:1,stage:7,pre:2,seed:5}).cells),JSON.stringify(E.newGame({speed:1,stage:7,pre:2,seed:5}).cells)); ok('같은 시드 → 같은 판');
 // 15) 태블릿은 거꾸로 돈다: X·↑(+1)가 반시계, Z(−1)가 시계. 캡슐·주사기는 그대로. 벽 차기도 같다
 for(const sh of [0,2]){ S=E.newGame({speed:1,stage:1,seed:7}); settle(S); forcePiece(S,[1,2],sh); S.piece.y=5; E.rotate(S,1); assert.strictEqual(S.piece.rot,1,'모양 '+sh+' 시계'); }
 S=E.newGame({speed:1,stage:1,seed:7}); settle(S); forcePiece(S,[1,2],1); S.piece.y=5;
