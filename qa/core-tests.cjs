@@ -54,7 +54,7 @@ put(S,0,GH-1,pill(2)); put(S,1,GH-1,pill(2)); put(S,2,GH-1,pill(2)); /* 바닥 �
 put(S,3,GH-2,pill(3,0,1,0)); put(S,4,GH-2,pill(3,0,-1,0)); /* 노랑 한 쌍이 (3,14),(4,14)에 떠 있도록 받침 */
 put(S,3,GH-1,pill(1)); put(S,4,GH-1,virus(1)); S.viruses=1; put(S,5,GH-1,pill(1)); put(S,6,GH-1,pill(2)); put(S,7,GH-1,virus(3)); S.viruses=2;
 /* 떨어지는 알약: 가로 빨강·파랑? 대신 세로로 빨강을 (6,15) 위에 둔다… 간단히: 세로 피스 [1,1]을 x=2에 떨어뜨려 (2,14),(2,13) → 빨강은 (3,15),(5,15)와 안 이어짐 */
-forcePiece(S,[2,2]); S.piece.x=2; S.piece.rot=1; /* (2,y),(2,y-1) 파랑 둘 → (2,14),(2,13) 위에 멈춤: 바닥 파랑 셋과 가로로는 안 맞고 세로는 둘뿐 */
+forcePiece(S,[2,2]); S.piece.x=2; S.piece.rot=1; /* (2,y),(2,y-1) 파랑 둘 → (2,14),(2,13) 위에 멈춤: 바닥 파랑 셋과 가로로는 안 맞고 세로는 둘 */
 until(S,s=>s.phase==='throw'||s.phase==='clearing'); assert.strictEqual(S.phase,'throw'); assert.ok(S.cells[E.idx(2,GH-2)]&&S.cells[E.idx(2,GH-3)]);
 /* 이제 가로 피스 [2,x]를 x=3 세로로 떨어뜨려 (3,13)에 파랑 → 가로 (2,13),(3,13)? 아니다. 대신 바닥 파랑 넷: (3,15)가 빨강이라 안 된다. 연쇄 시나리오를 직접 만든다 */
 clearBoard(S); put(S,0,GH-1,pill(2)); put(S,1,GH-1,pill(2)); put(S,2,GH-1,pill(2)); put(S,3,GH-1,virus(2)); S.viruses=1; /* 바닥 파랑 넷이지만 아직 지워지지 않은 상태로 둘 수 없으니, 셋+빈칸으로 */
